@@ -14,6 +14,10 @@ public class SanityConfig {
 	@Config.RequiresWorldRestart
 	public double startValue = 100D;
 	
+	@Config.LangKey("config.survivalinc:sanity.tendencyImpact")
+	@Config.RangeDouble(min = 1E-7, max = 0.1)
+	public double tendencyImpact= 0.0001D;
+	
 	@Config.LangKey("config.survivalinc:sanity.wetnessAnnoyanceThreshold")
 	@Config.RangeDouble(min = 0, max = 1)
 	public double wetnessAnnoyanceThreshold = 0.35D;
@@ -60,7 +64,7 @@ public class SanityConfig {
 	
 	@Config.LangKey("config.survivalinc:sanity.staticBuzzIntensity")
 	@Config.RangeDouble(min = 0, max = 1)
-	public double staticBuzzIntensity = 1;
+	public double staticBuzzIntensity = 0.7;
 	
 	@Config.LangKey("config.survivalinc:sanity.sleepDeprivationMin")
 	@Config.RangeInt(min = 1)
@@ -73,6 +77,10 @@ public class SanityConfig {
 	@Config.LangKey("config.survivalinc:sanity.sleepDeprivationDebuff")
 	@Config.RangeDouble(min = 0)
 	public double sleepDeprivationDebuff = 0.04;
+	
+	@Config.LangKey("config.survivalinc:sanity.runningRelieve")
+	@Config.RangeDouble(min = 0, max = 1)
+	public double runningRelieve= 0.1;
 	
 	@Config.LangKey("config.survivalinc:sanity.foodMap")
 	@Config.RequiresMcRestart
