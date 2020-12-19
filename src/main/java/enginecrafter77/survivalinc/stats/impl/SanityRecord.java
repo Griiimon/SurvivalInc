@@ -7,15 +7,15 @@ import enginecrafter77.survivalinc.stats.SimpleStatRecord;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class SanityRecord extends SimpleStatRecord {
-	public static final Range<Float> values = Range.closed(0F, 100F);
+	public static final Range<Float> values = Range.closed(-100F, 100F);
 	
 	protected int ticksAwake;
 	
 	public SanityRecord()
 	{
 		super();
+	
 		this.setValueRange(SanityRecord.values);
-		this.setValue((float)ModConfig.SANITY.startValue);
 		this.ticksAwake = 0;
 	}
 	
