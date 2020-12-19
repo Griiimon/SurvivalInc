@@ -112,6 +112,9 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		Biome biome = player.world.getBiome(player.getPosition());
 		target = biome.getTemperature(player.getPosition());
 
+		if(!player.world.isDaytime())
+			target-= ModConfig.HEAT.nightTemperatureDrop;
+		
 		if(player.posY < player.world.getSeaLevel()) // Cave
 		{
 			// temperature gradually changes 
