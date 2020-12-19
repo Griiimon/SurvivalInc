@@ -1,5 +1,6 @@
 package enginecrafter77.survivalinc;
 
+import enginecrafter77.survivalinc.client.DifferentialArrow;
 import enginecrafter77.survivalinc.client.Direction2D;
 import enginecrafter77.survivalinc.client.ElementPositioner;
 import enginecrafter77.survivalinc.client.RenderHUD;
@@ -67,6 +68,9 @@ public class ClientProxy extends CommonProxy {
 			bar.setCapacity(1);
 			RenderHUD.instance.addIndependent(bar, new ElementPositioner(0.5F, 1F, -8, -51));
 			RenderHUD.instance.addFilter(moveup, ElementType.SUBTITLES);
+			
+			DifferentialArrow arrow= new DifferentialArrow(SanityTendencyModifier.instance, 8,12,true);
+			RenderHUD.instance.addIndependent(arrow, new ElementPositioner(0.5F, 1F, -2, -51));
 		}
 		if(ModConfig.GHOST.enabled)
 		{
