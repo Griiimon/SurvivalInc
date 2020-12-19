@@ -2,6 +2,7 @@ package enginecrafter77.survivalinc;
 
 import enginecrafter77.survivalinc.block.BlockMelting;
 import enginecrafter77.survivalinc.config.ModConfig;
+import enginecrafter77.survivalinc.debug.SanityDebugCommand;
 import enginecrafter77.survivalinc.ghost.GhostCommand;
 import enginecrafter77.survivalinc.ghost.GhostProvider;
 import enginecrafter77.survivalinc.net.EntityItemUpdateMessage;
@@ -21,6 +22,7 @@ import enginecrafter77.survivalinc.stats.StatTracker;
 import enginecrafter77.survivalinc.stats.impl.HeatModifier;
 import enginecrafter77.survivalinc.stats.impl.HydrationModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityModifier;
+import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.stats.impl.WetnessModifier;
 import net.minecraft.command.CommandHandler;
 import net.minecraft.server.MinecraftServer;
@@ -64,7 +66,11 @@ public class CommonProxy {
 		
 		if(ModConfig.HEAT.enabled) HeatModifier.instance.init();
 		if(ModConfig.HYDRATION.enabled) HydrationModifier.instance.init();
-		if(ModConfig.SANITY.enabled) SanityModifier.instance.init();
+		if(ModConfig.SANITY.enabled)
+		{
+			SanityModifier.instance.init();
+			SanityTendencyModifier.instance.init();
+		}
 		if(ModConfig.WETNESS.enabled) WetnessModifier.instance.init();
 		if(ModConfig.GHOST.enabled) GhostProvider.instance.init();
 	}
@@ -85,6 +91,7 @@ public class CommonProxy {
 		
 		if(ModConfig.SEASONS.enabled) manager.registerCommand(new SeasonCommand());
 		if(ModConfig.GHOST.enabled) manager.registerCommand(new GhostCommand());
+		if(ModConfig.SANITY.enabled) manager.registerCommand(new SanityDebugCommand());
 		manager.registerCommand(new StatCommand());
 	}
 }
