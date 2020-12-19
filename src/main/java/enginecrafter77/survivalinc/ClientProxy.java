@@ -16,6 +16,7 @@ import enginecrafter77.survivalinc.stats.SimpleStatRecord;
 import enginecrafter77.survivalinc.stats.impl.HeatModifier;
 import enginecrafter77.survivalinc.stats.impl.HydrationModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityModifier;
+import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityRecord;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
@@ -61,7 +62,7 @@ public class ClientProxy extends CommonProxy {
 		}
 		if(ModConfig.SANITY.enabled)
 		{
-			StatFillBar<SanityRecord> bar = new StatFillBar<SanityRecord>(SanityModifier.instance, SanityRecord.class, Direction2D.UP, new TexturedElement(sanityicon, 0, 0, 16, 16, true));
+			StatFillBar<SimpleStatRecord> bar = new StatFillBar<SimpleStatRecord>(SanityModifier.instance, SimpleStatRecord.class, Direction2D.UP, new TexturedElement(sanityicon, 0, 0, 16, 16, true));
 			bar.addOverlay(new TexturedElement(sanityicon, 16, 0, 16, 16, true), SimpleStatRecord::getNormalizedValue);
 			bar.setCapacity(1);
 			RenderHUD.instance.addIndependent(bar, new ElementPositioner(0.5F, 1F, -8, -51));
