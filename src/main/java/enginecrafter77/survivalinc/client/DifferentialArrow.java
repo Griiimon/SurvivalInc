@@ -11,7 +11,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-@Deprecated
+
 @SideOnly(Side.CLIENT)
 public class DifferentialArrow extends SimpleOverlayElement<StatTracker> {
 	public static final ResourceLocation arrowtexture = new ResourceLocation(SurvivalInc.MOD_ID, "textures/gui/arrow.png");
@@ -29,7 +29,7 @@ public class DifferentialArrow extends SimpleOverlayElement<StatTracker> {
 		
 		this.amplitude = 10F;
 		this.min_scale = 0.3F;
-		this.max_scale = 1F;
+		this.max_scale = 0.7F;
 	}
 	
 	@Override
@@ -66,7 +66,9 @@ public class DifferentialArrow extends SimpleOverlayElement<StatTracker> {
 	{
 		SimpleStatRecord record = tracker.getRecord(provider);
 		
-		float scale = Math.abs(record.getLastChange() * this.amplitude);
+//		float scale = Math.abs(record.getLastChange() * this.amplitude);
+		float scale = Math.abs(record.getValue() / 100f);
+
 		if(this.exponential)
 		{
 			/*
@@ -80,7 +82,9 @@ public class DifferentialArrow extends SimpleOverlayElement<StatTracker> {
 			 * 'a' is a constant which defines the linear scaling up of the last change,
 			 * so it's real effects can be visible.
 			 */
-			scale = (1F - (float)Math.pow(6F, -2F * scale)) / (1F - (float)Math.pow(6F, -2F));
+//			scale = (1F - (float)Math.pow(6F, -2F * scale)) / (1F - (float)Math.pow(6F, -2F));
+			
+			scale= (float) Math.pow(scale, 2) + 0.3f;
 		}
 		
 		// Cap the scale
@@ -88,7 +92,7 @@ public class DifferentialArrow extends SimpleOverlayElement<StatTracker> {
 		if(scale < this.min_scale && scale != 0) scale = this.min_scale;
 		
 		// Reintroduce the direction sign into the scale
-		if(record.getLastChange() < 0) scale *= -1F;
+		if(record.getValue() < 0) scale *= -1F;
 		return scale;
 	}
 }
