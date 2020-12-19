@@ -18,6 +18,7 @@ import enginecrafter77.survivalinc.stats.effect.EffectApplicator;
 import enginecrafter77.survivalinc.stats.effect.FunctionalCalculator;
 import enginecrafter77.survivalinc.stats.effect.FunctionalEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.PotionStatEffect;
+import enginecrafter77.survivalinc.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.MobEffects;
@@ -107,14 +108,20 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		if(player.isCreative() || player.isSpectator()) return;
 		
 		float target;
-		if(player.posY < player.world.getSeaLevel()) target = (float)ModConfig.HEAT.caveTemperature; // Cave
-		else
+
+		Biome biome = player.world.getBiome(player.getPosition());
+		target = biome.getTemperature(player.getPosition());
+
+		if(player.posY < player.world.getSeaLevel()) // Cave
 		{
-			Biome biome = player.world.getBiome(player.getPosition());
-			target = biome.getTemperature(player.getPosition());
-			if(target < -0.2F) target = -0.2F;
-			if(target > 1.5F) target = 1.5F;
+			// temperature gradually changes 
+			target = (float)Util.lerp(target, (float)ModConfig.HEAT.caveTemperature, (float)Math.min((player.world.getSeaLevel() - player.posY) / 30f, 1f));   
 		}
+
+		
+		if(target < -0.2F) target = -0.2F;
+		if(target > 1.5F) target = 1.5F;
+		
 		target = targettemp.apply(player, target * (float)ModConfig.HEAT.tempCoefficient);
 		
 		SimpleStatRecord heat = (SimpleStatRecord)record;
