@@ -68,7 +68,7 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		
 		this.targettemp.add(HeatModifier::whenNearHotBlock);
 		
-		if(ModConfig.WETNESS.enabled) this.exchangerate.add(HeatModifier::applyWetnessCooldown);
+		/*if(ModConfig.WETNESS.enabled)*/ this.exchangerate.add(HeatModifier::applyWetnessCooldown);
 		this.exchangerate.add(this.armorInsulation);
 		
 		this.consequences.add(new DamageStatEffect(HYPOTHERMIA, (float)ModConfig.HEAT.damageAmount, 10)).addFilter(FunctionalEffectFilter.byValue(Range.lessThan(10F)));
@@ -112,13 +112,20 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		Biome biome = player.world.getBiome(player.getPosition());
 		target = biome.getTemperature(player.getPosition());
 
-		if(!player.world.isDaytime())
+		if(!Util.isDaytime(player))
 			target-= ModConfig.HEAT.nightTemperatureDrop;
+		
+		if(player.isSprinting())
+			target+= ModConfig.HEAT.runningTemperatureIncrease;
+		
+		if(Util.isDaytime(player))
+			target+= ModConfig.HEAT.sunWarmth;
 		
 		if(player.posY < player.world.getSeaLevel()) // Cave
 		{
 			// temperature gradually changes 
-			target = (float)Util.lerp(target, (float)ModConfig.HEAT.caveTemperature, (float)Math.min((player.world.getSeaLevel() - player.posY) / 30f, 1f));   
+			float depthThreshold= 30f;
+			target = (float)Util.lerp(target, (float)ModConfig.HEAT.caveTemperature, (float)Math.min((player.world.getSeaLevel() - player.posY) / depthThreshold, 1f));   
 		}
 
 		
@@ -177,9 +184,18 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 	
 	public static float applyWetnessCooldown(EntityPlayer player, float current)
 	{
-		StatTracker stats = player.getCapability(StatCapability.target, null);
-		SimpleStatRecord wetness = stats.getRecord(WetnessModifier.instance);
-		return current * (1F + (float)ModConfig.HEAT.wetnessExchangeMultiplier * wetness.getNormalizedValue());
+		float wetnessFactor= 0f;
+		
+		if(player.isInWater())
+			wetnessFactor= 1f;
+		else
+		if(ModConfig.WETNESS.enabled)
+		{
+			StatTracker stats = player.getCapability(StatCapability.target, null);
+			SimpleStatRecord wetness = stats.getRecord(WetnessModifier.instance);
+			wetnessFactor= wetness.getNormalizedValue();
+		}
+		return current * (1F + (float)ModConfig.HEAT.wetnessExchangeMultiplier * wetnessFactor);
 	}
 	
 	/**

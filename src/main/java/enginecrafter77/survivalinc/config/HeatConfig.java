@@ -11,7 +11,7 @@ public class HeatConfig {
 	
 	@Config.LangKey("config.survivalinc:heat.exchangeFactor")
 	@Config.RangeDouble(min = 0, max = 1)
-	public double heatExchangeFactor = 0.002;
+	public double heatExchangeFactor = 0.0002;
 	
 	@Config.LangKey("config.survivalinc:heat.gaussScaling")
 	@Config.RangeDouble(min = 0)
@@ -28,6 +28,18 @@ public class HeatConfig {
 	@Config.LangKey("config.survivalinc:heat.caveTemperature")
 	@Config.RangeDouble(min = 0)
 	public double caveTemperature = 0.7F;
+	
+	@Config.LangKey("config.survivalinc:heat.sunWarmth")
+	@Config.RangeDouble(min = 0)
+	public double sunWarmth= 0.2;
+	
+	@Config.LangKey("config.survivalinc:heat.nightTemperatureDrop")
+	@Config.RangeDouble(min = 0)
+	public double nightTemperatureDrop= 0.3;
+	
+	@Config.LangKey("config.survivalinc:heat.runningTemperatureIncrease")
+	@Config.RangeDouble(min = 0)
+	public double runningTemperatureIncrease= 0.1;
 	
 	@Config.LangKey("config.survivalinc:heat.tempCoefficient")
 	@Config.RangeDouble(min = 0)
