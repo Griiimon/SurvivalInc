@@ -43,6 +43,7 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.init.SoundEvents;
 
 /**
  * The class that handles heat radiation and
@@ -136,12 +137,22 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 			Minecraft client = Minecraft.getMinecraft();
 			if(player != client.player) return;
 			
-			if(player.world.rand.nextFloat() < 0.25F && record.getValue() < threshold)
+			if(Util.chance(25) && record.getValue() < threshold)
 			{
-				// 1F - current / threshold => this calculation is used to increase the volume for "more insane" players, up to 100% original volume (applied at sanity 0)
-				float volume = (1F - record.getValue() / threshold) * (float)ModConfig.SANITY.staticBuzzIntensity;
-				player.world.playSound(player.posX, player.posY, player.posZ, staticbuzz, SoundCategory.AMBIENT, volume, 1, false);
-				client.entityRenderer.loadShader(distortshader);
+				// collection of spooky sounds
+				SoundEvent[] sounds= new SoundEvent[] {SoundEvents.BLOCK_FIRE_AMBIENT, SoundEvents.ENTITY_ZOMBIE_AMBIENT, SoundEvents.ENTITY_ZOMBIE_ATTACK_DOOR_WOOD, SoundEvents.ENTITY_CREEPER_PRIMED, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundEvents.ENTITY_GHAST_SCREAM, SoundEvents.ENTITY_HOSTILE_BIG_FALL, SoundEvents.BLOCK_LAVA_POP, SoundEvents.ENTITY_PLAYER_HURT_ON_FIRE, SoundEvents.ENTITY_PLAYER_HURT_DROWN,SoundEvents.ENTITY_PLAYER_HURT,SoundEvents.ENTITY_POLAR_BEAR_WARNING,SoundEvents.ENTITY_SPIDER_AMBIENT,SoundEvents.BLOCK_TRIPWIRE_CLICK_ON,SoundEvents.ENTITY_WITCH_AMBIENT,SoundEvents.ENTITY_WITCH_THROW,SoundEvents.ENTITY_WITHER_SKELETON_STEP,SoundEvents.ENTITY_WITHER_SKELETON_AMBIENT,SoundEvents.ENTITY_WITHER_SKELETON_HURT,SoundEvents.ENTITY_ITEM_BREAK,SoundEvents.ENTITY_ENDERMEN_STARE,SoundEvents.ENTITY_ENDERMEN_SCREAM,SoundEvents.ENTITY_ENDERMEN_TELEPORT};
+				
+				int r= (Util.rnd(sounds.length+1));
+				
+				if(r < sounds.length)
+						player.world.playSound(player.posX, player.posY, player.posZ, sounds[r], SoundCategory.AMBIENT, Util.rndf(0.5f)+0.5f, 1, false);
+				else
+				{
+					// 1F - current / threshold => this calculation is used to increase the volume for "more insane" players, up to 100% original volume (applied at sanity 0)
+					float volume = (1F - record.getValue() / threshold) * (float)ModConfig.SANITY.staticBuzzIntensity;
+					player.world.playSound(player.posX, player.posY, player.posZ, staticbuzz, SoundCategory.AMBIENT, volume, 1, false);
+					client.entityRenderer.loadShader(distortshader);
+				}
 			}
 			else
 			{
