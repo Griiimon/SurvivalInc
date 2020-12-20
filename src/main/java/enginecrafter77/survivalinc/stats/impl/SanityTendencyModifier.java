@@ -26,6 +26,7 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.AnimalTameEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
@@ -54,6 +55,8 @@ import enginecrafter77.survivalinc.stats.effect.EffectApplicator;
 import enginecrafter77.survivalinc.stats.effect.FunctionalEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.SideEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.ValueStatEffect;
+import enginecrafter77.survivalinc.survivecraft.TraitModule;
+import enginecrafter77.survivalinc.util.Util;
 
 public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	private static final long serialVersionUID = 6707924203617912749L;
@@ -66,9 +69,8 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	String currentReasonStr= "";
 	float currentReasonVal= 0f;
 	int reasonTicks= 0;
-	const int reasonFlipTicks= 60;
-	
-	
+	int reasonFlipTicks= 60;
+
 	public SanityTendencyModifier()
 	{
 		this.effects = new EffectApplicator<SanityRecord>();
@@ -159,13 +161,13 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		
 		String postStr= ""+c;
 		
-		if(Math.abs(instance.currentReasonVal) > 0.1f)
+		if(Math.abs(instance.currentReasonVal) > 0.01f)
 			postStr+= ""+c;
 		
-		if(Math.abs(instance.currentReasonVal) > 0.3f)
+		if(Math.abs(instance.currentReasonVal) > 0.03f)
 			postStr+= ""+c;
 
-		if(Math.abs(instance.currentReasonVal) > 1f)
+		if(Math.abs(instance.currentReasonVal) > 0.1f)
 			postStr+= ""+c;
 
 		
@@ -276,9 +278,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	
 	public static void whenInSun(SanityRecord record, EntityPlayer player)
 	{
-		boolean day= player.world.getWorldTime() % 24000 < 12000;
-		
-		if(day && player.world.canBlockSeeSky(player.getPosition()))
+		if(Util.isDaytime(player) && Util.isInSun(player))
 			instance.addToTendency((float)ModConfig.SANITY.sunMoodBoost, "sun exposure", record);
 	}
 	
