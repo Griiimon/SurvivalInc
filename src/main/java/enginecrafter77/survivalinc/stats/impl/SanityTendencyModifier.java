@@ -1,14 +1,19 @@
 package enginecrafter77.survivalinc.stats.impl;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.renderer.color.BlockColors;
 import net.minecraft.client.shader.ShaderGroup;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.monster.*;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.passive.EntityTameable;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
@@ -16,11 +21,16 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.world.World;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.living.AnimalTameEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.player.PlayerWakeUpEvent;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
@@ -53,6 +63,12 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	public final EffectApplicator<SanityRecord> effects;
 	public final Map<Item, Float> foodSanityMap;
 	
+	String currentReasonStr= "";
+	float currentReasonVal= 0f;
+	int reasonTicks= 0;
+	const int reasonFlipTicks= 60;
+	
+	
 	public SanityTendencyModifier()
 	{
 		this.effects = new EffectApplicator<SanityRecord>();
@@ -67,6 +83,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		this.effects.add(SanityTendencyModifier::whenInDark).addFilter(HydrationModifier.isOutsideOverworld.invert());
 		this.effects.add(SanityTendencyModifier::whenNearEntities);
 		this.effects.add(SanityTendencyModifier::whenRunning);
+		this.effects.add(SanityTendencyModifier::whenInSun);
 		this.effects.add(SanityTendencyModifier::sleepDeprivation);
 		
 		// Compile food value list
@@ -79,6 +96,30 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		}
 	}
 	
+	
+	public void addToTendency(float value, String reason, EntityPlayer player)
+	{
+		StatTracker stats = player.getCapability(StatCapability.target, null);
+		addToTendency(value, reason, stats.getRecord(SanityTendencyModifier.instance));
+
+	}
+	
+	
+	public void addToTendency(float value, String reason, SanityRecord record)
+	{
+		record.addToValue(value);
+		
+		if(value == 0f)
+			return;
+		
+		if(reasonTicks > reasonFlipTicks && !reason.equals(currentReasonStr))
+		{
+			currentReasonStr= reason;
+			currentReasonVal= value;
+			reasonTicks= 0;
+		}
+	}
+	
 	@Override
 	public void update(EntityPlayer target, StatRecord record)
 	{
@@ -88,8 +129,54 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		++sanity.ticksAwake;
 		this.effects.apply(sanity, target);
 		sanity.checkoutValueChange();
+		
+		reasonTicks++;
+		if(reasonTicks > reasonFlipTicks)
+		{
+			currentReasonStr= "";
+		}
 	}
+	
+/*	
+	public static void onPlayerTick(TickEvent.PlayerTickEvent event)
+	{
+		if(event.side == Side.SERVER)
+		{
+			daytime= event.
+		}
+	}
+*/	
 
+	@SubscribeEvent
+	public static void RenderReason(RenderGameOverlayEvent.Post event)
+	{
+		if(instance.currentReasonStr == "")
+			return;
+		
+		String str= instance.currentReasonStr;
+		
+		char c= instance.currentReasonVal > 0f ? '+' : '-';
+		
+		String postStr= ""+c;
+		
+		if(Math.abs(instance.currentReasonVal) > 0.1f)
+			postStr+= ""+c;
+		
+		if(Math.abs(instance.currentReasonVal) > 0.3f)
+			postStr+= ""+c;
+
+		if(Math.abs(instance.currentReasonVal) > 1f)
+			postStr+= ""+c;
+
+		
+		str+= " "+postStr;
+		
+		FontRenderer renderer= Minecraft.getMinecraft().fontRenderer;
+		
+		if(event.getType() == ElementType.TEXT)
+			renderer.drawString(str, event.getResolution().getScaledWidth()-renderer.getStringWidth(str), event.getResolution().getScaledHeight()-renderer.FONT_HEIGHT, instance.currentReasonVal > 0 ? 0x00ff00 : 0xff0000,false);
+	}
+	
 	@Override
 	public ResourceLocation getStatID()
 	{
@@ -119,7 +206,8 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	{		
 		if(record.getTicksAwake() > ModConfig.SANITY.sleepDeprivationMin)
 		{
-			record.addToValue(-(float)ModConfig.SANITY.sleepDeprivationDebuff * (record.getTicksAwake() - ModConfig.SANITY.sleepDeprivationMin) / (ModConfig.SANITY.sleepDeprivationMax - ModConfig.SANITY.sleepDeprivationMin));
+//			record.addToValue(-(float)ModConfig.SANITY.sleepDeprivationDebuff * (record.getTicksAwake() - ModConfig.SANITY.sleepDeprivationMin) / (ModConfig.SANITY.sleepDeprivationMax - ModConfig.SANITY.sleepDeprivationMin));
+			instance.addToTendency(-(float)ModConfig.SANITY.sleepDeprivationDebuff * (record.getTicksAwake() - ModConfig.SANITY.sleepDeprivationMin) / (ModConfig.SANITY.sleepDeprivationMax - ModConfig.SANITY.sleepDeprivationMin), "No sleep", record);
 		}
 	}
 	
@@ -134,7 +222,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		if(lightlevel < ModConfig.SANITY.comfortLightLevel)
 		{
 			float darknesslevel = (float)(ModConfig.SANITY.comfortLightLevel - lightlevel) / (float)ModConfig.SANITY.comfortLightLevel;
-			record.addToValue((float)ModConfig.SANITY.darkSpookFactorBase * -darknesslevel);
+			instance.addToTendency((float)ModConfig.SANITY.darkSpookFactorBase * -darknesslevel, "Darkness", record);
 		}
 	}
 	
@@ -145,7 +233,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		SimpleStatRecord wetness = stats.getRecord(WetnessModifier.instance);		
 		if(wetness.getNormalizedValue() > boundary)
 		{
-			record.addToValue(((wetness.getNormalizedValue() - boundary) / (1F - boundary)) * -(float)ModConfig.SANITY.maxWetnessAnnoyance);
+			instance.addToTendency(((wetness.getNormalizedValue() - boundary) / (1F - boundary)) * -(float)ModConfig.SANITY.maxWetnessAnnoyance, "Wet", record);
 		}
 	}
 	
@@ -157,30 +245,41 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		AxisAlignedBB box = new AxisAlignedBB(origin.subtract(offset), origin.add(offset));
 		List<EntityCreature> entities = player.world.getEntitiesWithinAABB(EntityCreature.class, box);
 		
-		float value = record.getValue();
+//		float value = record.getValue();
 		for(EntityCreature creature : entities)
 		{
 			if(creature instanceof EntityTameable)
 			{
 				EntityTameable pet = (EntityTameable)creature;
 				// 4x bonus for tamed creatures. Having pets has it's perks :D
-				float bonus = pet.isTamed() ? (float)ModConfig.SANITY.tamedMobMultiplier : 1;
-				value += ModConfig.SANITY.friendlyMobBonus * bonus;
+//				float bonus = pet.isTamed() ? (float)ModConfig.SANITY.tamedMobMultiplier : 1;
+//				value += ModConfig.SANITY.friendlyMobBonus * bonus;
+				if(pet.isTamed())
+					instance.addToTendency((float)ModConfig.SANITY.tamedMobVincinity, "Near pet", record);
 			}
+/* 
+- reserve for ANIMAL_LOVER 
 			else if(creature instanceof EntityAnimal)
 				value += ModConfig.SANITY.friendlyMobBonus;
+- reserve for AFRAID				
 			else if(creature instanceof EntityMob)
 				value -= ModConfig.SANITY.hostileMobModifier;
-		}
-		record.setValue(value);
+*/		}
+//		record.setValue(value);
 	}
 	
 	public static void whenRunning(SanityRecord record, EntityPlayer player)
 	{
 		if(player.isSprinting())
-		{
-			record.addToValue((float)ModConfig.SANITY.runningRelieve);
-		}
+			instance.addToTendency((float)ModConfig.SANITY.runningRelieve, "running", record);
+	}
+	
+	public static void whenInSun(SanityRecord record, EntityPlayer player)
+	{
+		boolean day= player.world.getWorldTime() % 24000 < 12000;
+		
+		if(day && player.world.canBlockSeeSky(player.getPosition()))
+			instance.addToTendency((float)ModConfig.SANITY.sunMoodBoost, "sun exposure", record);
 	}
 	
 
@@ -192,8 +291,9 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		{
 			StatTracker stats = player.getCapability(StatCapability.target, null);
 			SanityRecord sanity = stats.getRecord(SanityTendencyModifier.instance);
-			sanity.addToValue(sanity.getValueRange().upperEndpoint() * (float)ModConfig.SANITY.sleepResoration);
+//			sanity.addToValue(sanity.getValueRange().upperEndpoint() * (float)ModConfig.SANITY.sleepResoration);
 			sanity.resetSleep();
+			instance.addToTendency(sanity.getValueRange().upperEndpoint() * (float)ModConfig.SANITY.sleepResoration, "sleep", player);
 			SurvivalInc.proxy.net.sendToAll(new StatSyncMessage(player));
 			player.getFoodStats().setFoodLevel(player.getFoodStats().getFoodLevel() - 8);
 		}
@@ -214,9 +314,8 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 				
 				// Modify the sanity value
 				EntityPlayer player = (EntityPlayer)ent;
-				StatTracker stats = player.getCapability(StatCapability.target, null);
-				SimpleStatRecord sanity = stats.getRecord(SanityTendencyModifier.instance);
-				sanity.addToValue(mod);
+				instance.addToTendency(mod, "food", player);
+
 			}
 			catch(NullPointerException exc)
 			{
@@ -229,11 +328,26 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	public static void onTame(AnimalTameEvent event)
 	{
 		Entity ent = event.getEntity();
+
 		if(ent instanceof EntityPlayer)
 		{
-			StatTracker stat = ent.getCapability(StatCapability.target, null);
-			SimpleStatRecord sanity = stat.getRecord(SanityTendencyModifier.instance);
-			sanity.addToValue((float)ModConfig.SANITY.animalTameBoost);
+			instance.addToTendency((float)ModConfig.SANITY.animalTameBoost, "taming", (EntityPlayer)ent);
+		}
+	}
+	
+	@SubscribeEvent
+	public static void onKilled(LivingDeathEvent event)
+	{
+		EntityLivingBase target= event.getEntityLiving();
+		
+		if(target instanceof EntityMob)
+		{
+			DamageSource source= event.getSource();
+			Entity sourceEntity= source.getImmediateSource();
+			if(sourceEntity != null && sourceEntity instanceof EntityPlayer)
+			{
+				instance.addToTendency((float)ModConfig.SANITY.mobKill, "mob killed", (EntityPlayer)sourceEntity);				
+			}
 		}
 	}
 }
