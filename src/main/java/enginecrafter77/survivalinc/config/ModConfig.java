@@ -36,6 +36,9 @@ public class ModConfig {
 	@Config.Name("seasons")
 	public static final SeasonConfig SEASONS = new SeasonConfig();
 
+	@Config.Name("traits")
+	public static final TraitsConfig TRAITS = new TraitsConfig();
+
 	// This deals with changed the config values in Forge's GUI in-game.
 	// It also deals with syncing some config values from the server to the
 	// client, so everything doesn't get messed up.
