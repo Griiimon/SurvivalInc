@@ -17,6 +17,7 @@ import enginecrafter77.survivalinc.stats.effect.EffectApplicator;
 import enginecrafter77.survivalinc.stats.effect.FunctionalEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.SideEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.ValueStatEffect;
+import enginecrafter77.survivalinc.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.multiplayer.WorldClient;
@@ -177,7 +178,7 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 		if(!player.isWet())
 		{
 			float rate = (float)ModConfig.WETNESS.passiveDryRate;
-			if(player.world.isDaytime() && player.world.canBlockSeeSky(player.getPosition())) rate *= ModConfig.WETNESS.sunlightMultiplier;
+			if(Util.isDaytime(player) && player.world.canBlockSeeSky(player.getPosition())) rate *= ModConfig.WETNESS.sunlightMultiplier;
 			record.addToValue(-rate);
 		}
 	}
