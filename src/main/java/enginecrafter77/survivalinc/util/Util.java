@@ -14,5 +14,25 @@ public class Util {
 	{
 		return player.world.getWorldTime() % 24000 < 12000;
 	}
+
+	public static boolean isInSun(EntityPlayer player)
+	{
+		return player.world.canBlockSeeSky(player.getPosition());
+	}
+	
+	public static int rnd(int r)
+	{
+		return (int)Math.floor(Math.random()*r);
+	}
+	
+	public static float rndf(float r)
+	{
+		return (float)Math.random()*r;
+	}
+	
+	public static boolean chance(float f)
+	{
+		return Math.random() * 100 < f;
+	}
 	
 }
