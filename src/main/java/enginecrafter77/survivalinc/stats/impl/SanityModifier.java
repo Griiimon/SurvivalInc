@@ -71,8 +71,9 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 	public void init()
 	{
 		MinecraftForge.EVENT_BUS.register(SanityModifier.class);
-		
-		this.effects.add(SanityModifier::playStaticNoise).addFilter(SideEffectFilter.CLIENT);
+	
+		// this ain't working for some reason
+//		this.effects.add(SanityModifier::playStaticNoise).addFilter(SideEffectFilter.CLIENT);
 
 	}
 	
@@ -124,6 +125,7 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 	public static void playStaticNoise(SimpleStatRecord record, EntityPlayer player)
 	{
 		float threshold = (float)ModConfig.SANITY.hallucinationThreshold * 100f;
+
 		if(player.world.getWorldTime() % 160 == 0)
 		{
 			/**
@@ -159,14 +161,15 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 	public static void onClientWorldTick(TickEvent.PlayerTickEvent event)
 	{
 		if(event.side.isServer()) return;
-		
+
+		StatTracker tracker = event.player.getCapability(StatCapability.target, null);
+		SimpleStatRecord sanity = tracker.getRecord(SanityModifier.instance);
+
 		if(SanityDebugCommand.enabled)
 		{
 			// Sends debug information to the player each second about absolute sanity and sanity tendency 
 			if(event.player.world.getWorldTime() % 20 == 0 && event.phase == Phase.START)
 			{
-				StatTracker tracker = event.player.getCapability(StatCapability.target, null);
-				SimpleStatRecord sanity = tracker.getRecord(SanityModifier.instance);
 				SimpleStatRecord sanityTendency = tracker.getRecord(SanityTendencyModifier.instance);
 	
 				float total= sanity.getValue();
@@ -179,11 +182,12 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 		
 		Minecraft client = Minecraft.getMinecraft();
 		ShaderGroup shader = client.entityRenderer.getShaderGroup();
-		StatTracker tracker = event.player.getCapability(StatCapability.target, null);
 		if(shader != null && event.player.world.getWorldTime() % 160 == 0 && shader.getShaderGroupName().equals(distortshader.toString()) && !tracker.isActive(SanityModifier.instance, null))
 		{
 			client.entityRenderer.stopUseShader();
 		}
+		else
+			playStaticNoise(sanity, event.player);
 	}
 	
 	@SubscribeEvent
