@@ -18,30 +18,35 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 
 public class TraitModule implements INBTSerializable<NBTTagCompound>{
-	public static int POS_TRAIT=0, NEG_TRAIT=1, NEUT_TRAIT=2;
+	public static final int POS_TRAIT=0, NEG_TRAIT=1, NEUT_TRAIT=2;
 	
 	public static int traitIDctr=0;
 	
+	public static final int USAGE_FREQUENCY_MODERATELY= 10;
+	public static final int USAGE_FREQUENCY_OFTEN= 100;
+	public static final int USAGE_FREQUENCY_CONTINUOUSLY= 1000;
+	
 	public enum TRAITS {
-		PETLOVER("Petlover", POS_TRAIT,0),
+		PETLOVER("Petlover", POS_TRAIT,70),
+		ANIMAL_LOVER("Animal Lover", POS_TRAIT, 70, USAGE_FREQUENCY_CONTINUOUSLY),
 		GREEN_THUMB("Green Thumb", POS_TRAIT,0),
 		STAR_CHILD("Star Child", POS_TRAIT,0),
-		COURAGEOUS("COURAGEOS", POS_TRAIT,20),		// less afraid of darkness
-		WARM("Warm", POS_TRAIT,50),
-		AQUATIC("Aquatic", POS_TRAIT,70),		
-		HARD_WORKING("Hard Working", POS_TRAIT,40),
-		DISCIPLINED("Disciplined", POS_TRAIT,60),		//aka professional junkie
-		RUNNER("Runner", POS_TRAIT,100),
+		COURAGEOUS("Courageous", POS_TRAIT,20,USAGE_FREQUENCY_OFTEN),			// less afraid of darkness
+		WARM("Warm", POS_TRAIT,50, USAGE_FREQUENCY_CONTINUOUSLY),				// lower freezing threshold
+		AQUAPHILE("Aquaphile", POS_TRAIT,70, USAGE_FREQUENCY_OFTEN),			// more comfortable in (cold) water
+		HARD_WORKING("Hard Working", POS_TRAIT,0),
+		DISCIPLINED("Disciplined", POS_TRAIT,0),								//aka professional junkie
+		RUNNER("Runner", POS_TRAIT,100, USAGE_FREQUENCY_CONTINUOUSLY),
 		MINER("Miner", POS_TRAIT,0),
-		SUNNY_BOY("Sunny Boy", POS_TRAIT,100),		
-		WORKAHOLIC("Work-a-holic", POS_TRAIT,100),
-		NONDISCRIMINATORY("Nondiscriminatory", POS_TRAIT,60),
-		BLOODLUSTY("Bloodthirsty", POS_TRAIT,80),
-		VERSATILE("Versatile", POS_TRAIT,0), 			// re-introduce !!!
-		AGGRESSIVE("Aggressive", POS_TRAIT,0),		// 40 but disabled cause aggressive potion effect may not have levels	
-		AMUSING("Amusing", POS_TRAIT,0),
-		CURIOUS("Curious", POS_TRAIT,60),
-		ECSTATIC("Ecstatic", POS_TRAIT,20),
+		HELIOPHILE("Heliophile", POS_TRAIT,100, USAGE_FREQUENCY_CONTINUOUSLY),	// loves sunshine		
+		WORKAHOLIC("Workaholic", POS_TRAIT,100, USAGE_FREQUENCY_CONTINUOUSLY),	// less sleep deprivation impact
+		NONDISCRIMINATORY("Nondiscriminatory", POS_TRAIT,0),					// food variety not as important
+		BLOODTHIRSTY("Bloodthirsty", POS_TRAIT,80),								// sanity boost from killing
+		VERSATILE("Versatile", POS_TRAIT,0), 			
+		AGGRESSIVE("Aggressive", POS_TRAIT,0),									// 40, but disabled cause aggressive potion effect may not have levels	
+		AMUSING("Amusing", POS_TRAIT,0),										// tells jokes to increase other players mood
+		CURIOUS("Curious", POS_TRAIT,0),
+		ECSTATIC("Ecstatic", POS_TRAIT,20),										// less haste-push dampening
 		DECADENT("Decadent", POS_TRAIT,0),
 		NOBLE("Noble", POS_TRAIT,0),	
 		DREAMER("Dreamer", POS_TRAIT,60),
@@ -84,6 +89,8 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		CRYBABY("Crybaby", NEG_TRAIT,100),
 		EASILY_ADDICTED("Addict", NEG_TRAIT,100),
 		BITTER("Bitter", NEG_TRAIT,70),
+		AFRAID_DARKNESS("Afraid", NEG_TRAIT,70),
+		AFRAID_MOBS("Coward", NEG_TRAIT,70),
 		UNDEAD("Undead", NEG_TRAIT,20);
 				
 		
@@ -91,9 +98,10 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		
 		
 		public String traitName;
-		int type,id,chance;
+		int type,id,chance,usageFrequency;
 		
-		TRAITS(String s,int t, int c) { traitName=s; type=t; chance=c; id=traitIDctr;traitIDctr++;}
+		TRAITS(String s,int t, int c) { traitName=s; type=t; chance=c; id=traitIDctr;traitIDctr++;usageFrequency= 1;}
+		TRAITS(String s,int t, int c, int freq) { traitName=s; type=t; chance=c; id=traitIDctr;traitIDctr++; usageFrequency= freq;}
 		
 	}
 	
@@ -124,7 +132,6 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 	
 	public TraitModule()
 	{
-//		System.out.println("Init Traitmodule for "+player.getName());
 	}
 	
 	public void init()
@@ -138,8 +145,6 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		if(event.getWorld().isRemote)
 			return;
 		
-//		System.out.println("Entity joins world "+event.getEntity().getName());
-
 		if(!ModConfig.TRAITS.enabled)
 			return;
 		
@@ -176,6 +181,14 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		
 		return 0;
 		
+	}
+	
+	public TraitListEntry getEntry(TRAITS t)
+	{
+		for(TraitListEntry entry : listTraits)
+			if(entry.trait == t)
+				return entry;
+		return null;
 	}
 	
 	public void AddRandomTrait()
@@ -357,6 +370,25 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		
 		}
 	}
+	
+	public void UsingTrait(TRAITS t)
+	{
+		UsingTrait(t, 1f);
+	}
+
+	
+	public void UsingTrait(TRAITS t, float factor)
+	{
+		TraitListEntry entry= getEntry(t);
+		
+		if(Util.chanced((100f * factor) / (ModConfig.TRAITS.baseIncreaseDifficulty * Math.pow(entry.tier+1,2) * entry.trait.usageFrequency)))
+		{
+			entry.tier++;
+			playerEntity.sendMessage(new TextComponentString("Trait Level Up: "+entry.trait.traitName+" Lvl "+(entry.tier+1)));
+		}
+		
+	}
+	
 
 	@Override
 	public void deserializeNBT(NBTTagCompound nbt) {
