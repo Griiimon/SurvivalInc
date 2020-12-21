@@ -34,5 +34,10 @@ public class Util {
 	{
 		return Math.random() * 100 < f;
 	}
-	
+
+	public static boolean chanced(double d)
+	{
+		return Math.random() * 100 < d;
+	}
+
 }
