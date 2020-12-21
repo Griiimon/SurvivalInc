@@ -18,13 +18,17 @@ import enginecrafter77.survivalinc.stats.effect.EffectApplicator;
 import enginecrafter77.survivalinc.stats.effect.FunctionalCalculator;
 import enginecrafter77.survivalinc.stats.effect.FunctionalEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.PotionStatEffect;
+import enginecrafter77.survivalinc.survivecraft.TraitModule;
+import enginecrafter77.survivalinc.survivecraft.TraitModule.TRAITS;
 import enginecrafter77.survivalinc.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.MobEffects;
+import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
@@ -68,14 +72,11 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		
 		this.targettemp.add(HeatModifier::whenNearHotBlock);
 		
-		/*if(ModConfig.WETNESS.enabled)*/ this.exchangerate.add(HeatModifier::applyWetnessCooldown);
+		// Even with Wetness turn off this still applies to swimming
+		this.exchangerate.add(HeatModifier::applyWetnessCooldown);
 		this.exchangerate.add(this.armorInsulation);
 		
-		this.consequences.add(new DamageStatEffect(HYPOTHERMIA, (float)ModConfig.HEAT.damageAmount, 10)).addFilter(FunctionalEffectFilter.byValue(Range.lessThan(10F)));
-		this.consequences.add(new PotionStatEffect(MobEffects.MINING_FATIGUE, 0)).addFilter(FunctionalEffectFilter.byValue(Range.lessThan(20F)));
-		this.consequences.add(new PotionStatEffect(MobEffects.WEAKNESS, 0)).addFilter(FunctionalEffectFilter.byValue(Range.lessThan(25F)));
-		this.consequences.add(HeatModifier::onHighTemperature).addFilter(FunctionalEffectFilter.byValue(Range.greaterThan(110F)));
-		
+
 		// Shit, these repeated parsers will surely get me a bad codefactor.io mark.
 		// Block temperature map
 		for(String entry : ModConfig.HEAT.blockHeatMap)
@@ -138,15 +139,47 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		float difference = Math.abs(target - heat.getValue());
 		float rate = difference * (float)ModConfig.HEAT.heatExchangeFactor;
 		rate = this.exchangerate.apply(player, rate);
+
+		
+
 		
 		// Apply the "side effects"
-		this.consequences.apply(heat, player);
+//		this.consequences.apply(heat, player);
+
+		boolean isColdResistant= TraitModule.instance.HasTrait(TRAITS.WARM);
+		
+		float coldResistance= isColdResistant ? TraitModule.instance.TraitTier(TRAITS.WARM) + 1 : 0f; 
+		
+		if(heat.getValue() < 10f - coldResistance)
+		{
+			new DamageStatEffect(HYPOTHERMIA, (float)ModConfig.HEAT.damageAmount, 10).apply(heat, player);
+			TraitModule.instance.UsingTrait(TRAITS.WARM, 5f);
+		}
+		if(heat.getValue() < 20f - coldResistance)
+		{
+			new PotionStatEffect(MobEffects.MINING_FATIGUE, 0).apply(heat, player);
+			TraitModule.instance.UsingTrait(TRAITS.WARM, 1.5f);
+		}
+		if(heat.getValue() < 25f - coldResistance)
+		{
+			new PotionStatEffect(MobEffects.WEAKNESS, 0).apply(record, player);
+			TraitModule.instance.UsingTrait(TRAITS.WARM);
+			if(Util.chance(1f))
+				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, Util.rndf(0.5f)+0.5f, 1, false);
+		}
+		if(heat.getValue() > 110f)
+		{
+			onHighTemperature(record, player);
+			if(Util.chance(1f))
+				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, Util.rndf(0.5f)+0.5f, 1, false);
+		}
 		
 		// If the current value is higher than the target, go down instead of up
 		if(heat.getValue() > target) rate *= -1;
 		// Checkout the rate to the value
 		heat.addToValue(rate);
 		heat.checkoutValueChange();
+		
 	}
 
 	@Override
