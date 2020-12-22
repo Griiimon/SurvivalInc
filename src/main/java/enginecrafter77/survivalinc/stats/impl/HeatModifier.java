@@ -18,8 +18,8 @@ import enginecrafter77.survivalinc.stats.effect.EffectApplicator;
 import enginecrafter77.survivalinc.stats.effect.FunctionalCalculator;
 import enginecrafter77.survivalinc.stats.effect.FunctionalEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.PotionStatEffect;
-import enginecrafter77.survivalinc.survivecraft.TraitModule;
-import enginecrafter77.survivalinc.survivecraft.TraitModule.TRAITS;
+import enginecrafter77.survivalinc.strugglecraft.TraitModule;
+import enginecrafter77.survivalinc.strugglecraft.TraitModule.TRAITS;
 import enginecrafter77.survivalinc.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
@@ -106,7 +106,7 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 	@Override
 	public void update(EntityPlayer player, StatRecord record)
 	{
-		if(player.isCreative() || player.isSpectator()) return;
+		if(player.isCreative() || player.isSpectator()/* || player.world.isRemote*/) return;
 		
 		float target;
 
@@ -153,25 +153,28 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		if(heat.getValue() < 10f - coldResistance)
 		{
 			new DamageStatEffect(HYPOTHERMIA, (float)ModConfig.HEAT.damageAmount, 10).apply(heat, player);
-			TraitModule.instance.UsingTrait(TRAITS.WARM, 5f);
+			if(isColdResistant)
+				TraitModule.instance.UsingTrait(TRAITS.WARM, 5f);
 		}
 		if(heat.getValue() < 20f - coldResistance)
 		{
 			new PotionStatEffect(MobEffects.MINING_FATIGUE, 0).apply(heat, player);
-			TraitModule.instance.UsingTrait(TRAITS.WARM, 1.5f);
+			if(isColdResistant)
+				TraitModule.instance.UsingTrait(TRAITS.WARM, 1.5f);
 		}
 		if(heat.getValue() < 25f - coldResistance)
 		{
 			new PotionStatEffect(MobEffects.WEAKNESS, 0).apply(record, player);
-			TraitModule.instance.UsingTrait(TRAITS.WARM);
+			if(isColdResistant)
+				TraitModule.instance.UsingTrait(TRAITS.WARM);
 			if(Util.chance(1f))
-				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, Util.rndf(0.5f)+0.5f, 1, false);
+				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, 1f, 1, false);
 		}
 		if(heat.getValue() > 110f)
 		{
 			onHighTemperature(record, player);
 			if(Util.chance(1f))
-				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, Util.rndf(0.5f)+0.5f, 1, false);
+				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, 1f, 1, false);
 		}
 		
 		// If the current value is higher than the target, go down instead of up
