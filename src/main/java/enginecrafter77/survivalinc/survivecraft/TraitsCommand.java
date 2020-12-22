@@ -15,7 +15,7 @@ public class TraitsCommand extends CommandBase{
 		if(ModConfig.TRAITS.enabled)
 		{
 			for(TraitModule.TraitListEntry entry : TraitModule.instance.listTraits)
-				sender.sendMessage(new TextComponentString(entry.trait.traitName+" Lvl "+entry.tier));
+				sender.sendMessage(new TextComponentString(entry.trait.traitName+" Lvl "+(entry.tier+1)));
 			
 		}
 	}
