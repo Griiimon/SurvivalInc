@@ -20,6 +20,8 @@ import enginecrafter77.survivalinc.stats.effect.FunctionalCalculator;
 import enginecrafter77.survivalinc.stats.effect.FunctionalEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.PotionStatEffect;
 import enginecrafter77.survivalinc.stats.effect.SideEffectFilter;
+import enginecrafter77.survivalinc.strugglecraft.TraitModule;
+import enginecrafter77.survivalinc.strugglecraft.TraitModule.TRAITS;
 import enginecrafter77.survivalinc.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -87,7 +89,7 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 	@Override
 	public void update(EntityPlayer player, StatRecord record)
 	{
-		if(player.isCreative() || player.isSpectator()) return;
+		if(player.isCreative() || player.isSpectator() /*|| player.world.isRemote*/) return;
 		
 		StatTracker tracker = player.getCapability(StatCapability.target, null);
 		
@@ -97,9 +99,53 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 		SanityRecord tendency = tracker.getRecord(SanityTendencyModifier.instance);
 
 		SimpleStatRecord sanity= (SimpleStatRecord) record;
-		
 		sanity.addToValue((float)(tendency.getValue() * ModConfig.SANITY.tendencyImpact));
 		sanity.checkoutValueChange();
+
+		
+		// excited state / haste-push
+		if(sanity.getValue() == 100f)
+		{
+			if(tendency.getValue()>0f)
+			{
+				boolean isEcstatic= TraitModule.instance.HasTrait(TRAITS.ECSTATIC);
+				
+				float factor= tendency.getValue()/100f;
+				
+				if(isEcstatic)
+				{
+					factor/= (TraitModule.instance.TraitTier(TRAITS.ECSTATIC)+1f) * 2f;
+				}
+				
+				// tendency dampener
+				SanityTendencyModifier.instance.addToTendency(-factor, "", player);
+
+				if(tendency.getValue() > 50f)
+				{
+					new PotionStatEffect(MobEffects.HASTE, 2).apply(tendency, player);
+					new PotionStatEffect(MobEffects.SPEED, 2).apply(tendency, player);
+					if(isEcstatic)
+						TraitModule.instance.UsingTrait(TRAITS.ECSTATIC, 2f);
+				}
+				else
+				if(tendency.getValue() > 20f)
+				{
+					new PotionStatEffect(MobEffects.HASTE, 1).apply(tendency, player);
+					new PotionStatEffect(MobEffects.SPEED, 1).apply(tendency, player);
+					if(isEcstatic)
+						TraitModule.instance.UsingTrait(TRAITS.ECSTATIC, 2f);
+				}
+				else
+				if(tendency.getValue() > 5f)
+				{
+					new PotionStatEffect(MobEffects.HASTE, 0).apply(tendency, player);
+					new PotionStatEffect(MobEffects.SPEED, 0).apply(tendency, player);
+					if(isEcstatic)
+						TraitModule.instance.UsingTrait(TRAITS.ECSTATIC);
+				}
+			}
+		}
+		
 	}
 
 	@Override
@@ -145,7 +191,8 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 				int r= (Util.rnd(sounds.length+1));
 				
 				if(r < sounds.length)
-						player.world.playSound(player.posX, player.posY, player.posZ, sounds[r], SoundCategory.AMBIENT, Util.rndf(0.5f)+0.5f, 1, false);
+					// TODO does this play sound on client only?  
+					player.world.playSound(player.posX, player.posY, player.posZ, sounds[r], SoundCategory.AMBIENT, Util.rndf(0.5f)+0.5f, 1, false);
 				else
 				{
 					// 1F - current / threshold => this calculation is used to increase the volume for "more insane" players, up to 100% original volume (applied at sanity 0)
