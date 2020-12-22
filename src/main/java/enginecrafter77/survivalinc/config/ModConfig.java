@@ -39,6 +39,12 @@ public class ModConfig {
 	@Config.Name("traits")
 	public static final TraitsConfig TRAITS = new TraitsConfig();
 
+	@Config.Name("food")
+	public static final FoodConfig FOOD = new FoodConfig();
+
+	@Config.Name("tweaks")
+	public static final TweaksConfig TWEAKS = new TweaksConfig();
+
 	// This deals with changed the config values in Forge's GUI in-game.
 	// It also deals with syncing some config values from the server to the
 	// client, so everything doesn't get messed up.
