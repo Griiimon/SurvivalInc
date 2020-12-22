@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
+import com.google.common.collect.Range;
+
 import enginecrafter77.survivalinc.SurvivalInc;
 import enginecrafter77.survivalinc.config.ModConfig;
 import enginecrafter77.survivalinc.net.StatSyncMessage;
@@ -57,8 +59,8 @@ import enginecrafter77.survivalinc.stats.effect.EffectApplicator;
 import enginecrafter77.survivalinc.stats.effect.FunctionalEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.SideEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.ValueStatEffect;
-import enginecrafter77.survivalinc.survivecraft.TraitModule;
-import enginecrafter77.survivalinc.survivecraft.TraitModule.TRAITS;
+import enginecrafter77.survivalinc.strugglecraft.TraitModule;
+import enginecrafter77.survivalinc.strugglecraft.TraitModule.TRAITS;
 import enginecrafter77.survivalinc.util.Util;
 
 public class SanityTendencyModifier implements StatProvider<SanityRecord> {
@@ -67,7 +69,6 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	public static final SanityTendencyModifier instance = new SanityTendencyModifier();
 	
 	public final EffectApplicator<SanityRecord> effects;
-	public final Map<Item, Float> foodSanityMap;
 	
 	class ReasonEntry
 	{
@@ -88,13 +89,13 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	public SanityTendencyModifier()
 	{
 		this.effects = new EffectApplicator<SanityRecord>();
-		this.foodSanityMap = new HashMap<Item, Float>();
 		reasons= new ArrayList<ReasonEntry>();
 	}
 	
 	public void init()
 	{
 		MinecraftForge.EVENT_BUS.register(SanityTendencyModifier.class);
+
 		if(ModConfig.WETNESS.enabled) this.effects.add(SanityTendencyModifier::whenWet).addFilter(FunctionalEffectFilter.byPlayer(EntityPlayer::isInWater).invert());
 		this.effects.add(new ValueStatEffect(ValueStatEffect.Operation.OFFSET, 0.004F)).addFilter(FunctionalEffectFilter.byPlayer(EntityPlayer::isPlayerSleeping));
 		this.effects.add(SanityTendencyModifier::whenInDark).addFilter(HydrationModifier.isOutsideOverworld.invert());
@@ -104,33 +105,54 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		this.effects.add(SanityTendencyModifier::sleepDeprivation);
 		this.effects.add(SanityTendencyModifier::whenInWater);
 		
-		// Compile food value list
-		for(String entry : ModConfig.SANITY.foodSanityMap)
-		{
-			int separator = entry.lastIndexOf(' ');
-			Item target = Item.getByNameOrId(entry.substring(0, separator));
-			Float value = Float.parseFloat(entry.substring(separator + 1));
-			this.foodSanityMap.put(target, value);
-		}
+		
+	
 	}
 	
+/*	
+	@SubscribeEvent
+	public static void onSpawn(EntityJoinWorldEvent event)
+	{
+		if(event.getWorld().isRemote)
+			return;
+		
+		Entity ent= event.getEntity();
+		if(ent instanceof EntityPlayer)
+		{
+			// TODO only for local player
+			setTendency(0f, (EntityPlayer)ent);
+		}
+	}
+*/
 	
 	public void addToTendency(float value, String reason, EntityPlayer player)
 	{
+		addToTendency(value, reason, player, false);
+	}
+
+	
+	public void addToTendency(float value, String reason, EntityPlayer player, boolean forceAddReason)
+	{
 		StatTracker stats = player.getCapability(StatCapability.target, null);
-		addToTendency(value, reason, stats.getRecord(SanityTendencyModifier.instance));
+		addToTendency(value, reason, stats.getRecord(SanityTendencyModifier.instance), forceAddReason);
 
 	}
 	
-	
+
 	public void addToTendency(float value, String reason, SanityRecord record)
+	{
+		addToTendency(value, reason, record, false);
+	}
+
+	
+	public void addToTendency(float value, String reason, SanityRecord record, boolean forceAddReason)
 	{
 		record.addToValue(value);
 		
-		if(value == 0f)
+		if(value == 0f || reason == "")
 			return;
 		
-		if(reasons.size() < 3)
+		if(reasons.size() < 3 || forceAddReason)
 		{
 			boolean alreadyUsed= false;
 			for(ReasonEntry entry : reasons)
@@ -141,7 +163,11 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 				}
 			
 			if(!alreadyUsed)
+			{
+//				if(reasons.size() == 0)
+//					reasonTicks= 0;
 				reasons.add(new ReasonEntry(reason, value));
+			}
 		}
 		
 	}
@@ -149,14 +175,15 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	@Override
 	public void update(EntityPlayer target, StatRecord record)
 	{
-		if(target.isCreative() || target.isSpectator()) return;
+		if(target.isCreative() || target.isSpectator()/* || target.world.isRemote*/) return;
 		
 		SanityRecord sanity = (SanityRecord)record;
 		++sanity.ticksAwake;
 		this.effects.apply(sanity, target);
 		sanity.checkoutValueChange();
 		
-		tickReasons();
+		if(!target.world.isRemote)
+			tickReasons();
 	}
 	
 	void tickReasons()
@@ -182,13 +209,14 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 				if(Math.abs(value) > 0.1f)
 					postStr+= ""+c;
 
-				
 				currentReasonStr+= " "+postStr;
 				
 				reasons.remove(0);
 			}
 			else
 				currentReasonStr= "";
+			
+			reasonTicks= 0;
 		}
 	}
 	
@@ -217,7 +245,9 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	@Override
 	public SanityRecord createNewRecord()
 	{
-		return new SanityRecord();
+		SanityRecord record= new SanityRecord();
+		record.setValue((float)ModConfig.SANITY.startTendencyValue);
+		return record;
 	}
 	
 	@Override
@@ -245,6 +275,12 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 			int offset= (TraitModule.instance.TraitTier(TRAITS.WORKAHOLIC)+1)*2000;
 			sleepMin+= offset;
 			sleepMax+= offset*4;
+		}
+		if(TraitModule.instance.HasTrait(TRAITS.SLEEPY))
+		{
+			int offset= (TraitModule.instance.TraitTier(TRAITS.SLEEPY)+1)*2000;
+			sleepMin-= offset;
+			sleepMax-= offset*4;
 		}
 		
 		if(record.getTicksAwake() > sleepMin)
@@ -367,7 +403,8 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 			if(heat < coldThreshold)
 			{
 				instance.addToTendency(-1f/heat, "Cold water", player);
-				TraitModule.instance.UsingTrait(TRAITS.AQUAPHILE, coldThreshold / Math.max(heat, 1));
+				if(isAquaphile)
+					TraitModule.instance.UsingTrait(TRAITS.AQUAPHILE, coldThreshold / Math.max(heat, 1));
 			}
 			else
 			if(heat > comfortableThreshold)
@@ -414,7 +451,8 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 			player.getFoodStats().setFoodLevel(player.getFoodStats().getFoodLevel() - 8);
 		}
 	}
-	
+
+	/*
 	@SubscribeEvent
 	public static void onConsumeItem(LivingEntityUseItemEvent.Finish event)
 	{		
@@ -439,6 +477,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 			}
 		}
 	}
+*/
 	
 	@SubscribeEvent
 	public static void onTame(AnimalTameEvent event)
