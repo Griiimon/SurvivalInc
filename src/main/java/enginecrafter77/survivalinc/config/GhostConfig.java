@@ -6,7 +6,7 @@ import net.minecraftforge.common.config.Config;
 public class GhostConfig {
 	@Config.LangKey("config.survivalinc:ghost.enable")
 	@Config.RequiresMcRestart
-	public boolean enabled = true;
+	public boolean enabled = false;
 	
 	@Config.LangKey("config.survivalinc:ghost.enableInteraction")
 	public boolean enableInteraction = true;
