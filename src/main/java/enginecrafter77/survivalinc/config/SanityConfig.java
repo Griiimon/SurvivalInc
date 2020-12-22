@@ -13,6 +13,10 @@ public class SanityConfig {
 	@Config.RangeDouble(min = 0, max = 100)
 	@Config.RequiresWorldRestart
 	public double startValue = 100D;
+
+	@Config.LangKey("config.survivalinc:sanity.startTendencyValue")
+	@Config.RangeDouble(min = 0, max = 100)
+	public double startTendencyValue = 100D;
 	
 	@Config.LangKey("config.survivalinc:sanity.tendencyImpact")
 	@Config.RangeDouble(min = 1E-7, max = 0.1)
@@ -32,7 +36,7 @@ public class SanityConfig {
 	
 	@Config.LangKey("config.survivalinc:sanity.comfortLightLevel")
 	@Config.RangeInt(min = 0, max = 15)
-	public int comfortLightLevel = 4;
+	public int comfortLightLevel = 7;
 	
 	@Config.LangKey("config.survivalinc:sanity.nighttimeDrain")
 	@Config.RangeDouble(min = 1E-3)
@@ -93,28 +97,4 @@ public class SanityConfig {
 	@Config.LangKey("config.survivalinc:sanity.sunExposure")
 	@Config.RangeDouble(min = 0, max = 1)
 	public double sunMoodBoost= 0.001;
-	
-	@Config.LangKey("config.survivalinc:sanity.foodMap")
-	@Config.RequiresMcRestart
-	public String[] foodSanityMap = {
-			"minecraft:chicken -5",
-			"minecraft:beef -5",
-			"minecraft:rabbit -5",
-			"minecraft:mutton -5",
-			"minecraft:porkchop -5",
-			"minecraft:fish -5",
-			"minecraft:rotten_flesh -10",
-			"minecraft:spider_eye -15",
-			"minecraft:cooked_chicken 2",
-			"minecraft:cooked_beef 2",
-			"minecraft:cooked_rabbit 2",
-			"minecraft:cooked_mutton 2",
-			"minecraft:cooked_porkchop 2",
-			"minecraft:cooked_fish 2",
-			"minecraft:pumpkin_pie 10",
-			"minecraft:rabbit_stew 6",
-			"minecraft:mushroom_stew 6",
-			"minecraft:beetroot_soup 5.75",
-			"minecraft:cookie 7.5"
-	};
 }
