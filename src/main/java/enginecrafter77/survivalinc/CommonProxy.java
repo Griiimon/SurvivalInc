@@ -24,8 +24,11 @@ import enginecrafter77.survivalinc.stats.impl.HydrationModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.stats.impl.WetnessModifier;
-import enginecrafter77.survivalinc.survivecraft.TraitModule;
-import enginecrafter77.survivalinc.survivecraft.TraitsCommand;
+import enginecrafter77.survivalinc.strugglecraft.DeathsCommand;
+import enginecrafter77.survivalinc.strugglecraft.Tweaks;
+import enginecrafter77.survivalinc.strugglecraft.FoodModule;
+import enginecrafter77.survivalinc.strugglecraft.TraitModule;
+import enginecrafter77.survivalinc.strugglecraft.TraitsCommand;
 import net.minecraft.command.CommandHandler;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.MinecraftForge;
@@ -76,6 +79,9 @@ public class CommonProxy {
 		if(ModConfig.WETNESS.enabled) WetnessModifier.instance.init();
 		if(ModConfig.GHOST.enabled) GhostProvider.instance.init();
 		if(ModConfig.TRAITS.enabled) TraitModule.instance.init();
+		
+		if(ModConfig.FOOD.enabled) FoodModule.instance.init();
+		if(ModConfig.TWEAKS.enabled) Tweaks.instance.init();
 	}
 	
 	public void postInit(FMLPostInitializationEvent event)
@@ -96,6 +102,7 @@ public class CommonProxy {
 		if(ModConfig.GHOST.enabled) manager.registerCommand(new GhostCommand());
 		if(ModConfig.SANITY.enabled) manager.registerCommand(new SanityDebugCommand());
 		if(ModConfig.TRAITS.enabled) manager.registerCommand(new TraitsCommand());
+		if(ModConfig.TRAITS.enabled) manager.registerCommand(new DeathsCommand());
 		
 		manager.registerCommand(new StatCommand());
 	}
