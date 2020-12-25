@@ -60,6 +60,8 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 	public static final ResourceLocation distortshader = new ResourceLocation(SurvivalInc.MOD_ID, "shaders/distort.json");
 	public static final SoundEvent staticbuzz = new SoundEvent(new ResourceLocation(SurvivalInc.MOD_ID, "staticbuzz"));
 
+	public static final DamageSource LOW_SANITY_DAMAGE= new DamageSource("survivalinc_lowsanity").setDamageIsAbsolute().setDamageBypassesArmor();
+
 	
 	public static final SanityModifier instance = new SanityModifier();
 	
@@ -110,7 +112,8 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 			{
 				boolean isEcstatic= TraitModule.instance.HasTrait(TRAITS.ECSTATIC);
 				
-				float factor= tendency.getValue()/100f;
+				// dampener
+				float factor= tendency.getValue()/10000f;
 				
 				if(isEcstatic)
 				{
@@ -169,7 +172,7 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 		return SimpleStatRecord.class;
 	}
 	
-	public static void playStaticNoise(SimpleStatRecord record, EntityPlayer player)
+	public static void lowSanityConsequences(SimpleStatRecord record, EntityPlayer player)
 	{
 		float threshold = (float)ModConfig.SANITY.hallucinationThreshold * 100f;
 
@@ -181,18 +184,24 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 			 * not be evaluated.
 			 */
 			Minecraft client = Minecraft.getMinecraft();
-			if(player != client.player) return;
+			if(player == client.player) 
+				return;
 			
-			if(Util.chance(25) && record.getValue() < threshold)
+//			if(Util.chance(25) && record.getValue() < threshold)
+			if(Util.chance((threshold - record.getValue()) * (100f / (float)threshold)))
 			{
 				// collection of spooky sounds
 				SoundEvent[] sounds= new SoundEvent[] {SoundEvents.BLOCK_FIRE_AMBIENT, SoundEvents.ENTITY_ZOMBIE_AMBIENT, SoundEvents.ENTITY_ZOMBIE_ATTACK_DOOR_WOOD, SoundEvents.ENTITY_CREEPER_PRIMED, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundEvents.ENTITY_GHAST_SCREAM, SoundEvents.ENTITY_HOSTILE_BIG_FALL, SoundEvents.BLOCK_LAVA_POP, SoundEvents.ENTITY_PLAYER_HURT_ON_FIRE, SoundEvents.ENTITY_PLAYER_HURT_DROWN,SoundEvents.ENTITY_PLAYER_HURT,SoundEvents.ENTITY_POLAR_BEAR_WARNING,SoundEvents.ENTITY_SPIDER_AMBIENT,SoundEvents.BLOCK_TRIPWIRE_CLICK_ON,SoundEvents.ENTITY_WITCH_AMBIENT,SoundEvents.ENTITY_WITCH_THROW,SoundEvents.ENTITY_WITHER_SKELETON_STEP,SoundEvents.ENTITY_WITHER_SKELETON_AMBIENT,SoundEvents.ENTITY_WITHER_SKELETON_HURT,SoundEvents.ENTITY_ITEM_BREAK,SoundEvents.ENTITY_ENDERMEN_STARE,SoundEvents.ENTITY_ENDERMEN_SCREAM,SoundEvents.ENTITY_ENDERMEN_TELEPORT};
 				
-				int r= (Util.rnd(sounds.length+1));
+				int r= (Util.rnd(sounds.length));
 				
-				if(r < sounds.length)
-					// TODO does this play sound on client only?  
+				if(Util.chance(90f))
 					player.world.playSound(player.posX, player.posY, player.posZ, sounds[r], SoundCategory.AMBIENT, Util.rndf(0.5f)+0.5f, 1, false);
+				else
+				if(Util.chance(50f) && record.getValue() < threshold / 2f)
+				{
+					new DamageStatEffect(LOW_SANITY_DAMAGE, 1, 10).apply(record, player);
+				}
 				else
 				{
 					// 1F - current / threshold => this calculation is used to increase the volume for "more insane" players, up to 100% original volume (applied at sanity 0)
@@ -245,7 +254,7 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 			client.entityRenderer.stopUseShader();
 		}
 		else
-			playStaticNoise(sanity, event.player);
+			lowSanityConsequences(sanity, event.player);
 	}
 	
 	@SubscribeEvent
