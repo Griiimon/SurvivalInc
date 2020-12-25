@@ -1,5 +1,6 @@
 package enginecrafter77.survivalinc.util;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 
 public class Util {
@@ -38,6 +39,14 @@ public class Util {
 	public static boolean chanced(double d)
 	{
 		return Math.random() * 100 < d;
+	}
+	
+	public static boolean thisClientOnly(EntityPlayer player)
+	{
+		Minecraft client = Minecraft.getMinecraft();
+		if(player == client.player) 
+			return true;
+		return false;
 	}
 
 }
