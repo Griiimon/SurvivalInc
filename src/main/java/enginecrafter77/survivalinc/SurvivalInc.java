@@ -2,6 +2,7 @@ package enginecrafter77.survivalinc;
 
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.Mod.Instance;
@@ -10,8 +11,13 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 import org.apache.logging.log4j.Logger;
+
+import enginecrafter77.survivalinc.block.TileEntityHeater;
+import enginecrafter77.survivalinc.client.GuiHandler;
 
 @Mod(modid = SurvivalInc.MOD_ID)
 public class SurvivalInc {
@@ -37,12 +43,18 @@ public class SurvivalInc {
 	{
 		SurvivalInc.logger = event.getModLog();
 		proxy.preInit(event);
+
+//		GameRegistry.registerTileEntity(TileEntityHeater.class, new ResourceLocation(SurvivalInc.MOD_ID, "heater"));
+
 	}
 
 	@EventHandler
 	public void init(FMLInitializationEvent event)
 	{
 		proxy.init(event);
+		
+		NetworkRegistry.INSTANCE.registerGuiHandler(SurvivalInc.instance, new GuiHandler());
+
 	}
 
 	@EventHandler

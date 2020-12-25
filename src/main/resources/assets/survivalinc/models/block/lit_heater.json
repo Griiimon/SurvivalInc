@@ -1,0 +1,8 @@
+{
+    "parent": "block/orientable",
+    "textures": {
+        "top": "survivalinc:blocks/heater_top",
+        "front": "survivalinc:blocks/heater_front_on",
+        "side": "survivalinc:blocks/heater_front_on"
+    }
+}

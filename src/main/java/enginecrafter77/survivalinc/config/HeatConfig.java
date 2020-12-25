@@ -57,6 +57,10 @@ public class HeatConfig {
 	@Config.RangeDouble(min = 0)
 	public double damageAmount = 1D;
 	
+	@Config.LangKey("config.survivalinc:heat.heaterFuelUsage")
+	@Config.RangeDouble(min = 0)
+	public double heaterFuelUsage=0.2;
+	
 	@Config.LangKey("config.survivalinc:heat.blockHeatMap")
 	@Config.RequiresMcRestart
 	public String[] blockHeatMap = {
@@ -65,7 +69,8 @@ public class HeatConfig {
 			"minecraft:magma 300",
 			"minecraft:fire 200",
 			"minecraft:lit_furnace 100",
-			"minecraft:lit_pumpkin 80"
+			"minecraft:lit_pumpkin 80",
+			"survivalinc:lit_heater 100"
 	};
 	
 	@Config.LangKey("config.survivalinc:heat.armorMaterialConductivity")
