@@ -28,6 +28,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.AnimalTameEvent;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.player.PlayerWakeUpEvent;
@@ -80,7 +81,6 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 
 	ArrayList<ReasonEntry> reasons;
 	
-
 	
 	String currentReasonStr= "";
 	int reasonTicks= 0;
@@ -452,32 +452,6 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		}
 	}
 
-	/*
-	@SubscribeEvent
-	public static void onConsumeItem(LivingEntityUseItemEvent.Finish event)
-	{		
-		Entity ent = event.getEntity();	
-		if(ent instanceof EntityPlayer)
-		{
-			try
-			{
-				// Try to get the modifier from the map (throws NPE when no such mapping exists)
-				
-				// TODO use default mod if there's no key in the map
-				float mod = SanityTendencyModifier.instance.foodSanityMap.get(event.getItem().getItem());
-				
-				// Modify the sanity value
-				EntityPlayer player = (EntityPlayer)ent;
-				instance.addToTendency(mod, "food", player);
-
-			}
-			catch(NullPointerException exc)
-			{
-				// Food simply doesn't have any sanity mapping associated
-			}
-		}
-	}
-*/
 	
 	@SubscribeEvent
 	public static void onTame(AnimalTameEvent event)
@@ -500,16 +474,70 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 
 		if(sourceEntity != null && sourceEntity instanceof EntityPlayer)
 		{
+			EntityPlayer player= (EntityPlayer) sourceEntity;
+			
+			if(!Util.thisClientOnly(player))
+				return;
+			
 			if(target instanceof EntityMob)
 			{
-					instance.addToTendency((float)ModConfig.SANITY.mobKill, "mob killed", (EntityPlayer)sourceEntity);				
+				if(TraitModule.instance.HasTrait(TRAITS.PACIFIST))
+					instance.addToTendency(-(float)ModConfig.SANITY.mobKill, "pacifist", player);				
+				else
+					instance.addToTendency((float)ModConfig.SANITY.mobKill, "mob killed", player);				
 			}
 
 			if(TraitModule.instance.HasTrait(TRAITS.BLOODTHIRSTY))
 			{
-				instance.addToTendency((TraitModule.instance.TraitTier(TRAITS.BLOODTHIRSTY) + 1 ) /10f, "killed something", (EntityPlayer)sourceEntity);				
+				instance.addToTendency((TraitModule.instance.TraitTier(TRAITS.BLOODTHIRSTY) + 1 ) /10f, "killed something", player);				
 				TraitModule.instance.UsingTrait(TRAITS.BLOODTHIRSTY);
 			}
+			
+			if(target instanceof EntityAnimal)
+			{
+				if(TraitModule.instance.HasTrait(TRAITS.ANIMAL_LOVER))
+					instance.addToTendency(-0.1f, "Poor animal", player);
+			}
+		}
+	}
+	
+	@SubscribeEvent
+	public static void onDamaged(LivingDamageEvent event)
+	{
+
+		Entity entity= event.getEntity();
+		
+		if(entity != null && entity instanceof EntityPlayer)
+		{
+			EntityPlayer player= (EntityPlayer) entity;
+			
+			if(!Util.thisClientOnly(player))
+				return;
+			
+			boolean isMasochist= TraitModule.instance.HasTrait(TRAITS.MASOCHIST);
+			
+			float factor= 1;
+			if(isMasochist)
+				factor*= -1;
+
+			boolean skipSanity= false;
+			if(TraitModule.instance.HasTrait(TRAITS.HARD_SHELL))
+			{
+				if(Util.chance((TraitModule.instance.TraitTier(TRAITS.HARD_SHELL) + 1) * 20f))
+				{
+					skipSanity= true;
+					TraitModule.instance.UsingTrait(TRAITS.HARD_SHELL);
+				}
+			}
+			
+			if(!skipSanity)
+				instance.addToTendency((float)(ModConfig.SANITY.hurt * factor), "Ouch", player);
+			
+			if(isMasochist)
+				TraitModule.instance.UsingTrait(TRAITS.MASOCHIST);
+			
+			if(TraitModule.instance.HasTrait(TRAITS.FRAGILE))
+				event.setAmount(event.getAmount()*2f);
 		}
 	}
 }
