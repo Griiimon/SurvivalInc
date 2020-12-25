@@ -29,7 +29,6 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 	
 	public enum TRAITS {
 		PETLOVER("Petlover", POS_TRAIT,70),
-		ANIMAL_LOVER("Animal Lover", POS_TRAIT, 70, USAGE_FREQUENCY_CONTINUOUSLY),
 		GREEN_THUMB("Green Thumb", POS_TRAIT,0),
 		STAR_CHILD("Star Child", POS_TRAIT,0),
 		COURAGEOUS("Courageous", POS_TRAIT,20,USAGE_FREQUENCY_OFTEN),			// less afraid of darkness
@@ -39,9 +38,9 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		DISCIPLINED("Disciplined", POS_TRAIT,0),								//aka professional junkie
 		RUNNER("Runner", POS_TRAIT,100, USAGE_FREQUENCY_CONTINUOUSLY),
 		MINER("Miner", POS_TRAIT,0),
-		HELIOPHILE("Heliophile", POS_TRAIT,100, USAGE_FREQUENCY_CONTINUOUSLY),	// loves sunshine		
+		HELIOPHILE("Heliophile", POS_TRAIT,50, USAGE_FREQUENCY_CONTINUOUSLY),	// loves sunshine		
 		WORKAHOLIC("Workaholic", POS_TRAIT,100, USAGE_FREQUENCY_CONTINUOUSLY),	// less sleep deprivation impact
-		NONDISCRIMINATORY("Nondiscriminatory", POS_TRAIT,0),					// food variety not as important
+		NONDISCRIMINATORY("Nondiscriminatory", POS_TRAIT,100),					// food variety not as important
 		BLOODTHIRSTY("Bloodthirsty", POS_TRAIT,80),								// sanity boost from killing
 		VERSATILE("Versatile", POS_TRAIT,0), 			
 		AGGRESSIVE("Aggressive", POS_TRAIT,0),									// 40, but disabled cause aggressive potion effect may not have levels	
@@ -50,49 +49,50 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		ECSTATIC("Ecstatic", POS_TRAIT,20),										// less haste-push dampening
 		DECADENT("Decadent", POS_TRAIT,0),
 		NOBLE("Noble", POS_TRAIT,0),	
-		DREAMER("Dreamer", POS_TRAIT,60),
-		QUICK("Quick", POS_TRAIT,50),
-		CHEERFUL("Cheerful", POS_TRAIT,30),
-		EDUCATED("Educated", POS_TRAIT,50),
-		PATIENT("Patient", POS_TRAIT,40),	
+		DREAMER("Dreamer", POS_TRAIT,0),
+		QUICK("Quick", POS_TRAIT,0),
+		CHEERFUL("Cheerful", POS_TRAIT,0),
+		EDUCATED("Educated", POS_TRAIT,0),
+		PATIENT("Patient", POS_TRAIT,0),	
 		MASOCHIST("Masochist", POS_TRAIT,70),
-		HARD_SHELL("Hard shell", POS_TRAIT,80),
-		HEALTHY("Healthy", POS_TRAIT, 50),
+		HARD_SHELL("Hard shell", POS_TRAIT,50),									// less sanity loss from damage
+		HEALTHY("Healthy", POS_TRAIT, 0),
 		
 		
 		
-		LONER("Loner", NEUT_TRAIT,30),
-		EMOTIONAL("Emotional", NEUT_TRAIT,50),
-		NUDIST("Nudist", NEUT_TRAIT,30),	
+		LONER("Loner", NEUT_TRAIT,0),
+		EMOTIONAL("Emotional", NEUT_TRAIT,0),
+		NUDIST("Nudist", NEUT_TRAIT,0),	
 		EXPLOSIVE("Explosive", NEUT_TRAIT,0),
-		ACTIVE("Active", NEUT_TRAIT,100),
-		DEFENSIVE("Defensive", NEUT_TRAIT,70),
-		STUBBORN("Stubborn", NEUT_TRAIT,100),
+		ACTIVE("Active", NEUT_TRAIT,0),
+		DEFENSIVE("Defensive", NEUT_TRAIT,0),
+		STUBBORN("Stubborn", NEUT_TRAIT,0),
+		TASTELESS("Tasteless", NEG_TRAIT,50),									// no sanity effects from food
+		ANIMAL_LOVER("Animal Lover", POS_TRAIT, 70, USAGE_FREQUENCY_CONTINUOUSLY),	// likes to be around but not to kill animals
 	
 		
 		
 		
-		PACIFIST("Pacifist", NEG_TRAIT,50),	
-		VEGETARIAN("Vegetarian", NEG_TRAIT,70),	
-		SENSITIVE("Sensitive", NEG_TRAIT,100),
-		TASTELESS("Tasteless", NEG_TRAIT,50),
-		GOURMET("Gourmet", NEG_TRAIT,100),
+		PACIFIST("Pacifist", NEG_TRAIT,50),										// sanity loss from killing mobs
+		VEGETARIAN("Vegetarian", NEG_TRAIT,0),	
+		SENSITIVE("Sensitive", NEG_TRAIT,0),									
+		GOURMET("Gourmet", NEG_TRAIT,100),										// more annoyed by same food
 		BLAND("Bland", NEG_TRAIT,0),
 		CLUMSY("Clumsy", NEG_TRAIT,0),		
 		DEMANDING("Demanding", NEG_TRAIT,0),
 		NERVOUS("Nervous", NEG_TRAIT,0),
 		IDIOTIC("Idiotic", NEG_TRAIT,0),
 		IMPULSIVE("Impulsive", NEG_TRAIT,0),
-		SLEEPY("Sleepy", NEG_TRAIT,100),		
+		SLEEPY("Sleepy", NEG_TRAIT,100),										// sleep deprivation is more serious
 		PARANOID("Paranoid", NEG_TRAIT,0),
-		UNINSPIRED("Uninspired", NEG_TRAIT,100),
-		FRAGILE("Fragile", NEG_TRAIT,100),
-		CRYBABY("Crybaby", NEG_TRAIT,100),
-		EASILY_ADDICTED("Addict", NEG_TRAIT,100),
-		BITTER("Bitter", NEG_TRAIT,70),
+		UNINSPIRED("Uninspired", NEG_TRAIT,0),
+		FRAGILE("Fragile", NEG_TRAIT,100),										// takes double damage
+		CRYBABY("Crybaby", NEG_TRAIT,0),
+		EASILY_ADDICTED("Addict", NEG_TRAIT,0),
+		BITTER("Bitter", NEG_TRAIT,0),
 		AFRAID_DARKNESS("Afraid", NEG_TRAIT,70),
-		AFRAID_MOBS("Coward", NEG_TRAIT,70),
-		UNDEAD("Undead", NEG_TRAIT,20);
+		AFRAID_MOBS("Coward", NEG_TRAIT,70),									// doesn't like to be around hostiles
+		UNDEAD("Undead", NEG_TRAIT,20);											// doesn't like sunshine, may catch fire
 				
 		
 		// new traits go here, to not corrupt save game trait ids
@@ -149,13 +149,17 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		Entity ent= event.getEntity();
 		if(ent instanceof EntityPlayer)
 		{
-			// TODO only for local player
-			instance.playerEntity= (EntityPlayer) ent;
+			EntityPlayer player= (EntityPlayer) ent;
+			
+			if(!Util.thisClientOnly(player))
+				return;
+
+			instance.playerEntity= player;
 			
 			instance.listTraits.clear();
-//			if(instance.listTraits.isEmpty())
-				for(int i= 0; i < 3; i++)
-					instance.AddRandomTrait();
+
+			for(int i= 0; i < 3; i++)
+				instance.AddRandomTrait();
 		}
 	}
 	
