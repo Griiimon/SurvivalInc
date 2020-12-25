@@ -152,7 +152,8 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		
 		if(heat.getValue() < 10f - coldResistance)
 		{
-			new DamageStatEffect(HYPOTHERMIA, (float)ModConfig.HEAT.damageAmount, 10).apply(heat, player);
+			if(Util.chance(1f))
+				new DamageStatEffect(HYPOTHERMIA, (float)ModConfig.HEAT.damageAmount, 10).apply(heat, player);
 			if(isColdResistant)
 				TraitModule.instance.UsingTrait(TRAITS.WARM, 5f);
 		}
@@ -214,7 +215,8 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		}
 		else
 		{
-			player.attackEntityFrom(HYPERTHERMIA, (float)ModConfig.HEAT.damageAmount);
+			if(Util.chance(1f))
+				player.attackEntityFrom(HYPERTHERMIA, (float)ModConfig.HEAT.damageAmount);
 		}
 	}
 	
