@@ -91,10 +91,15 @@ public class SanityConfig {
 	public double sleepDeprivationDebuff = 0.04;
 	
 	@Config.LangKey("config.survivalinc:sanity.runningRelieve")
-	@Config.RangeDouble(min = 0, max = 1)
+	@Config.RangeDouble(min = 0)
 	public double runningRelieve= 0.1;
 	
 	@Config.LangKey("config.survivalinc:sanity.sunExposure")
-	@Config.RangeDouble(min = 0, max = 1)
+	@Config.RangeDouble(min = 0)
 	public double sunMoodBoost= 0.001;
+
+	@Config.LangKey("config.survivalinc:sanity.hurt")
+	@Config.RangeDouble(max = 0)
+	public double hurt= -0.1;
+
 }
