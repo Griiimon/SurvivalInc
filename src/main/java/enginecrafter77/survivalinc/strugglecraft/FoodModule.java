@@ -7,6 +7,7 @@ import java.util.Map;
 
 import enginecrafter77.survivalinc.config.ModConfig;
 import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
+import enginecrafter77.survivalinc.strugglecraft.TraitModule.TRAITS;
 import enginecrafter77.survivalinc.util.Util;
 import ibxm.Player;
 import net.minecraft.entity.player.EntityPlayer;
@@ -42,7 +43,7 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 		MinecraftForge.EVENT_BUS.register(FoodModule.class);
 		
 		// Compile food value list
-		for(String entry : ModConfig.SANITY.foodSanityMap)
+		for(String entry : ModConfig.FOOD.foodSanityMap)
 		{
 			int separator = entry.lastIndexOf(' ');
 			Item target = Item.getByNameOrId(entry.substring(0, separator));
@@ -62,7 +63,7 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 		
 		if(event.getItem().getItem() instanceof ItemFood)
 		{
-			player.sendMessage(new TextComponentString("This is food"));
+//			player.sendMessage(new TextComponentString("This is food"));
 
 			ItemFood food= (ItemFood)event.getItem().getItem();
 			int id= Item.getIdFromItem(food);
@@ -79,7 +80,14 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 				if(value > 0)
 				{
 					instance.foodTable.put(randomKey, value-1);
-					if(value == ModConfig.FOOD.enoughThreshold - 1)
+				
+					int offset= 0;
+					if(TraitModule.instance.HasTrait(TRAITS.NONDISCRIMINATORY))
+						offset+= 2;
+					if(TraitModule.instance.HasTrait(TRAITS.GOURMET))
+						offset-=2;
+					
+					if(value == ModConfig.FOOD.enoughThreshold - 1 + offset)
 						player.sendMessage(new TextComponentString(new ItemStack(Item.getItemById(instance.favoriteFoodId)).getDisplayName()+ " is more acceptable"));
 				}
 			}
@@ -107,12 +115,14 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 			else
 			if(id == instance.favoriteFoodId)
 			{
-				SanityTendencyModifier.instance.addToTendency((float)ModConfig.FOOD.favFoodSanity, "Favourite food", player, true);
+				if(!TraitModule.instance.HasTrait(TRAITS.TASTELESS))
+					SanityTendencyModifier.instance.addToTendency((float)ModConfig.FOOD.favFoodSanity, "Favourite food", player, true);
 			}
 			else
 			if(instance.foodSanityMap.containsKey(food))
 			{
-				SanityTendencyModifier.instance.addToTendency(instance.foodSanityMap.get(food), "food", player);
+				if(!TraitModule.instance.HasTrait(TRAITS.TASTELESS))
+					SanityTendencyModifier.instance.addToTendency(instance.foodSanityMap.get(food), "food", player);
 			}
 			else	// annoyance level only for foods not listed in sanity map / current favorite food
 			if(Util.chance((float)ModConfig.FOOD.increaseLevelChance))
@@ -121,15 +131,26 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 				int level= instance.foodTable.get(id)+1;
 				instance.foodTable.put(id, level);
 				
-				if(level >= ModConfig.FOOD.enoughThreshold)
+				boolean isNondiscriminatory= TraitModule.instance.HasTrait(TRAITS.NONDISCRIMINATORY);
+				int offset= 0;
+				if(isNondiscriminatory)
+					offset+= 2;
+				if(TraitModule.instance.HasTrait(TRAITS.GOURMET))
+					offset-=2;
+				
+				if(level >= ModConfig.FOOD.enoughThreshold + offset)
 				{
 					SanityTendencyModifier.instance.addToTendency(-1, "Same food", (EntityPlayer)event.getEntity(), true);
 					player.sendMessage(new TextComponentString("Please no more "+event.getItem().getDisplayName()+"!"));
+					if(isNondiscriminatory)
+						TraitModule.instance.UsingTrait(TRAITS.NONDISCRIMINATORY, 2f);
 				}
 				else
-				if(level >= ModConfig.FOOD.annoyedThreshold)
+				if(level >= ModConfig.FOOD.annoyedThreshold + offset)
 				{
 					player.sendMessage(new TextComponentString("Again "+event.getItem().getDisplayName()+"?"));
+					if(isNondiscriminatory)
+						TraitModule.instance.UsingTrait(TRAITS.NONDISCRIMINATORY);
 				}
 			}
 		}
