@@ -58,9 +58,9 @@ public class SanityConfig {
 	@Config.RangeDouble(min = 0)
 	public double animalTameBoost = 20;
 	
-	@Config.LangKey("config.survivalinc:sanity.petVincinity")
+	@Config.LangKey("config.survivalinc:sanity.petProximity")
 	@Config.RangeDouble(min = 0)
-	public double tamedMobVincinity= 0.002;
+	public double tamedMobProximity= 0.002;
 
 	@Config.LangKey("config.survivalinc:sanity.mobKill")
 	@Config.RangeDouble(min = 0)
@@ -92,7 +92,7 @@ public class SanityConfig {
 	
 	@Config.LangKey("config.survivalinc:sanity.runningRelieve")
 	@Config.RangeDouble(min = 0)
-	public double runningRelieve= 0.1;
+	public double runningRelieve= 0.02;
 	
 	@Config.LangKey("config.survivalinc:sanity.sunExposure")
 	@Config.RangeDouble(min = 0)
@@ -101,5 +101,9 @@ public class SanityConfig {
 	@Config.LangKey("config.survivalinc:sanity.hurt")
 	@Config.RangeDouble(max = 0)
 	public double hurt= -0.1;
+
+	@Config.LangKey("config.survivalinc:sanity.swimFun")
+	@Config.RangeDouble(max = 0)
+	public double swimFun= 0.0002;
 
 }
