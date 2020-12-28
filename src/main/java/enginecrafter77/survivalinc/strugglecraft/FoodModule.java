@@ -1,39 +1,41 @@
 package enginecrafter77.survivalinc.strugglecraft;
 
 import java.util.HashMap;
-
 import java.util.Hashtable;
 import java.util.Map;
 
+import enginecrafter77.survivalinc.SurvivalInc;
 import enginecrafter77.survivalinc.config.ModConfig;
+import enginecrafter77.survivalinc.stats.FoodRecord;
+import enginecrafter77.survivalinc.stats.ListIntRecord;
+import enginecrafter77.survivalinc.stats.StatCapability;
+import enginecrafter77.survivalinc.stats.StatProvider;
+import enginecrafter77.survivalinc.stats.StatRecord;
+import enginecrafter77.survivalinc.stats.StatRegisterEvent;
+import enginecrafter77.survivalinc.stats.StatTracker;
 import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.strugglecraft.TraitModule.TRAITS;
 import enginecrafter77.survivalinc.util.Util;
-import ibxm.Player;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemFood;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.text.TextComponentKeybind;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.relauncher.Side;
+import scala.collection.mutable.HashTable;
 
-public class FoodModule implements INBTSerializable<NBTTagCompound>{
 
-	Hashtable<Integer, Integer> foodTable= new Hashtable<Integer, Integer>();
-	
-	public final Map<Item, Float> foodSanityMap= new HashMap<Item, Float>();
+public class FoodModule implements StatProvider<FoodRecord> {
+	private static final long serialVersionUID = 6277772840199029918L;
 
-	
-	int favoriteFoodId= -1;
+
+	public static final Map<Item, Float> foodSanityMap= new HashMap<Item, Float>();
+
 	
 	public static FoodModule instance= new FoodModule();
 	
@@ -48,7 +50,7 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 			int separator = entry.lastIndexOf(' ');
 			Item target = Item.getByNameOrId(entry.substring(0, separator));
 			Float value = Float.parseFloat(entry.substring(separator + 1));
-			this.foodSanityMap.put(target, value);
+			foodSanityMap.put(target, value);
 		}
 	}
 	
@@ -63,6 +65,14 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 		
 		if(event.getItem().getItem() instanceof ItemFood)
 		{
+			Hashtable<Integer, Integer> foodTable;
+			
+			StatTracker tracker = player.getCapability(StatCapability.target, null);
+			FoodRecord record= tracker.getRecord(FoodModule.instance);
+
+			foodTable= record.getFoodTable();
+			
+			
 //			player.sendMessage(new TextComponentString("This is food"));
 
 			ItemFood food= (ItemFood)event.getItem().getItem();
@@ -70,30 +80,30 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 			
 			
 			// decrease annoyance level of random known food
-			if(Util.chance((float)ModConfig.FOOD.decreaseLevelChance) && !instance.foodTable.isEmpty())
+			if(Util.chance((float)ModConfig.FOOD.decreaseLevelChance) && !foodTable.isEmpty())
 			{
-				Object[] arr= instance.foodTable.keySet().toArray();
-				int randomKey= (int)arr[Util.rnd(instance.foodTable.size())];
+				Object[] arr= foodTable.keySet().toArray();
+				int randomKey= (int)arr[Util.rnd(foodTable.size())];
 				
-				int value= instance.foodTable.get(randomKey);
+				int value= foodTable.get(randomKey);
 				
-				if(value > 0)
+				if(value > 0 && value != id)
 				{
-					instance.foodTable.put(randomKey, value-1);
+					foodTable.put(randomKey, value-1);
 				
 					int offset= 0;
-					if(TraitModule.instance.HasTrait(TRAITS.NONDISCRIMINATORY))
+					if(TraitModule.instance.HasTrait(player,TRAITS.NONDISCRIMINATORY))
 						offset+= 2;
-					if(TraitModule.instance.HasTrait(TRAITS.GOURMET))
+					if(TraitModule.instance.HasTrait(player,TRAITS.GOURMET))
 						offset-=2;
 					
 					if(value == ModConfig.FOOD.enoughThreshold - 1 + offset)
-						player.sendMessage(new TextComponentString(new ItemStack(Item.getItemById(instance.favoriteFoodId)).getDisplayName()+ " is more acceptable"));
+						player.sendMessage(new TextComponentString(new ItemStack(Item.getItemById(record.getFavoriteFoodId())).getDisplayName()+ " is more acceptable"));
 				}
 			}
 			
 			
-			if(!instance.foodTable.containsKey(id))
+			if(!foodTable.containsKey(id))
 			{
 				// tasted this food item for the first time
 				int annoyedOffset= 0;
@@ -101,41 +111,41 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 				// chance to become new favorite food
 				if(Util.chance((float)ModConfig.FOOD.favFoodChance))
 				{
-					instance.favoriteFoodId= id;
+					record.setFavoriteFoodId(id);
 					player.sendMessage(new TextComponentString("I love "+event.getItem().getDisplayName()));
 				}
 				else
 					annoyedOffset= Util.rnd(3);
 				
-				instance.foodTable.put(id, annoyedOffset);
+				foodTable.put(id, annoyedOffset);
 				
 				// increase sanity boost with each new food tasted, but not linear
-				SanityTendencyModifier.instance.addToTendency((float)Math.sqrt(instance.foodTable.values().size()), "New food", player, true);
+				SanityTendencyModifier.instance.addToTendency((float)Math.sqrt(foodTable.values().size()), "New food", player, true);
 			}
 			else
-			if(id == instance.favoriteFoodId)
+			if(id == record.getFavoriteFoodId())
 			{
-				if(!TraitModule.instance.HasTrait(TRAITS.TASTELESS))
+				if(!TraitModule.instance.HasTrait(player,TRAITS.TASTELESS))
 					SanityTendencyModifier.instance.addToTendency((float)ModConfig.FOOD.favFoodSanity, "Favourite food", player, true);
 			}
 			else
-			if(instance.foodSanityMap.containsKey(food))
+			if(foodSanityMap.containsKey(food))
 			{
-				if(!TraitModule.instance.HasTrait(TRAITS.TASTELESS))
-					SanityTendencyModifier.instance.addToTendency(instance.foodSanityMap.get(food), "food", player);
+				if(!TraitModule.instance.HasTrait(player,TRAITS.TASTELESS))
+					SanityTendencyModifier.instance.addToTendency(foodSanityMap.get(food), "food", player);
 			}
 			else	// annoyance level only for foods not listed in sanity map / current favorite food
 			if(Util.chance((float)ModConfig.FOOD.increaseLevelChance))
 			{
 				
-				int level= instance.foodTable.get(id)+1;
-				instance.foodTable.put(id, level);
+				int level= foodTable.get(id)+1;
+				foodTable.put(id, level);
 				
-				boolean isNondiscriminatory= TraitModule.instance.HasTrait(TRAITS.NONDISCRIMINATORY);
+				boolean isNondiscriminatory= TraitModule.instance.HasTrait(player,TRAITS.NONDISCRIMINATORY);
 				int offset= 0;
 				if(isNondiscriminatory)
-					offset+= 2;
-				if(TraitModule.instance.HasTrait(TRAITS.GOURMET))
+					offset+= 2 + TraitModule.instance.TraitTier(player, TRAITS.NONDISCRIMINATORY);
+				if(TraitModule.instance.HasTrait(player,TRAITS.GOURMET))
 					offset-=2;
 				
 				if(level >= ModConfig.FOOD.enoughThreshold + offset)
@@ -143,14 +153,14 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 					SanityTendencyModifier.instance.addToTendency(-1, "Same food", (EntityPlayer)event.getEntity(), true);
 					player.sendMessage(new TextComponentString("Please no more "+event.getItem().getDisplayName()+"!"));
 					if(isNondiscriminatory)
-						TraitModule.instance.UsingTrait(TRAITS.NONDISCRIMINATORY, 2f);
+						TraitModule.instance.UsingTrait(player,TRAITS.NONDISCRIMINATORY, 2f);
 				}
 				else
 				if(level >= ModConfig.FOOD.annoyedThreshold + offset)
 				{
 					player.sendMessage(new TextComponentString("Again "+event.getItem().getDisplayName()+"?"));
 					if(isNondiscriminatory)
-						TraitModule.instance.UsingTrait(TRAITS.NONDISCRIMINATORY);
+						TraitModule.instance.UsingTrait(player,TRAITS.NONDISCRIMINATORY);
 				}
 			}
 		}
@@ -159,8 +169,23 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 	}
 	
 	
+	public int getFavoriteFoodId(EntityPlayer player)
+	{
+		StatTracker tracker = player.getCapability(StatCapability.target, null);
+		FoodRecord record= tracker.getRecord(FoodModule.instance);
+
+		return record.getFavoriteFoodId();
+	}
 	
+	public Hashtable<Integer, Integer> getFoodTable(EntityPlayer player)
+	{
+		StatTracker tracker = player.getCapability(StatCapability.target, null);
+		FoodRecord record= tracker.getRecord(FoodModule.instance);
+
+		return record.getFoodTable();
+	}
 	
+/*	
 	@Override
 	public void deserializeNBT(NBTTagCompound nbt) {
 		int arr[]= nbt.getIntArray("table");
@@ -186,4 +211,36 @@ public class FoodModule implements INBTSerializable<NBTTagCompound>{
 		tag.setInteger("favfood", favoriteFoodId);
 		return tag;
 	}
+*/
+
+
+	@Override
+	public void update(EntityPlayer target, StatRecord record) {
+		
+	}
+
+
+
+	@Override
+	public ResourceLocation getStatID() {
+		return new ResourceLocation(SurvivalInc.MOD_ID, "food");
+	}
+
+	@Override
+	public FoodRecord createNewRecord() {
+		FoodRecord record= new FoodRecord();
+		return record;
+	}
+
+	@Override
+	public Class<FoodRecord> getRecordClass() {
+		return FoodRecord.class;
+	}
+
+	@SubscribeEvent
+	public static void registerStat(StatRegisterEvent event)
+	{
+		event.register(FoodModule.instance);
+	}
+
 }
