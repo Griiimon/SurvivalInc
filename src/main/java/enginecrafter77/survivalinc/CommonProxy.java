@@ -1,6 +1,7 @@
 package enginecrafter77.survivalinc;
 
 import enginecrafter77.survivalinc.block.BlockMelting;
+import enginecrafter77.survivalinc.client.GuiHandler;
 import enginecrafter77.survivalinc.config.ModConfig;
 import enginecrafter77.survivalinc.debug.SanityDebugCommand;
 import enginecrafter77.survivalinc.ghost.GhostCommand;
@@ -24,9 +25,12 @@ import enginecrafter77.survivalinc.stats.impl.HydrationModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.stats.impl.WetnessModifier;
+import enginecrafter77.survivalinc.strugglecraft.DeathCounter;
 import enginecrafter77.survivalinc.strugglecraft.DeathsCommand;
+import enginecrafter77.survivalinc.strugglecraft.FavouriteFoodCommand;
 import enginecrafter77.survivalinc.strugglecraft.Tweaks;
 import enginecrafter77.survivalinc.strugglecraft.FoodModule;
+import enginecrafter77.survivalinc.strugglecraft.HateFoodCommand;
 import enginecrafter77.survivalinc.strugglecraft.TraitModule;
 import enginecrafter77.survivalinc.strugglecraft.TraitsCommand;
 import net.minecraft.command.CommandHandler;
@@ -39,6 +43,7 @@ import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 
 public class CommonProxy {
@@ -58,6 +63,8 @@ public class CommonProxy {
 		
 		// Register capabilities.
 		CapabilityManager.INSTANCE.register(StatTracker.class, StatStorage.instance, StatRegisterDispatcher.instance);
+		
+		MinecraftForge.EVENT_BUS.register(new DeathCounter());
 	}
 
 	public void init(FMLInitializationEvent event)
@@ -82,6 +89,10 @@ public class CommonProxy {
 		
 		if(ModConfig.FOOD.enabled) FoodModule.instance.init();
 		if(ModConfig.TWEAKS.enabled) Tweaks.instance.init();
+		
+		
+		
+
 	}
 	
 	public void postInit(FMLPostInitializationEvent event)
@@ -91,6 +102,8 @@ public class CommonProxy {
 			MeltingController.compile(ModConfig.SEASONS.meltController);
 			MinecraftForge.EVENT_BUS.register(MeltingController.class);
 		}
+		
+		Tweaks.postInit();
 	}
 
 	public void serverStarting(FMLServerStartingEvent event)
@@ -103,6 +116,8 @@ public class CommonProxy {
 		if(ModConfig.SANITY.enabled) manager.registerCommand(new SanityDebugCommand());
 		if(ModConfig.TRAITS.enabled) manager.registerCommand(new TraitsCommand());
 		if(ModConfig.TRAITS.enabled) manager.registerCommand(new DeathsCommand());
+		if(ModConfig.FOOD.enabled) manager.registerCommand(new FavouriteFoodCommand());
+		if(ModConfig.FOOD.enabled) manager.registerCommand(new HateFoodCommand());
 		
 		manager.registerCommand(new StatCommand());
 	}
