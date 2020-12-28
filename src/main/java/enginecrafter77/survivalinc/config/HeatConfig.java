@@ -68,18 +68,20 @@ public class HeatConfig {
 			"minecraft:flowing_lava 350",
 			"minecraft:magma 300",
 			"minecraft:fire 200",
-			"minecraft:lit_furnace 100",
+			"minecraft:lit_furnace 150",
 			"minecraft:lit_pumpkin 80",
-			"survivalinc:lit_heater 100"
+			"survivalinc:lit_heater 150",
+			"campfire:campfire 100"
 	};
 	
 	@Config.LangKey("config.survivalinc:heat.armorMaterialConductivity")
 	@Config.RequiresMcRestart
 	public String[] armorMaterialConductivity = {
-			"leather 0.3",
+			"leather 0.7",
 			"chain 1.1",
 			"iron 1.2",
 			"gold 1.5",
-			"diamond 2.25"
+			"diamond 2.25",
+			"wool 0.3"
 	};
 }

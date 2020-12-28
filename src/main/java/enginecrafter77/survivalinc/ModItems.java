@@ -1,8 +1,10 @@
 package enginecrafter77.survivalinc;
 
 import enginecrafter77.survivalinc.item.*;
+import enginecrafter77.survivalinc.strugglecraft.WoolArmor;
 
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.ModelRegistryEvent;
@@ -12,12 +14,17 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.registries.IForgeRegistry;
 
+
 @Mod.EventBusSubscriber
 public enum ModItems {
 	
 	CANTEEN(new ItemCanteen(), "canteen_drain", "canteen_refill"),
 	FEATHER_FAN(new ItemFeatherFan(), "feather_fan"),
-	TOWEL(new ItemTowel(), "towel_dry", "towel_wet");
+	TOWEL(new ItemTowel(), "towel_dry", "towel_wet"),
+	WOOL_HAT(new WoolArmor("wool_helmet", EntityEquipmentSlot.HEAD), "wool_helmet"),
+	WOOL_SWEATER(new WoolArmor("wool_chestplate", EntityEquipmentSlot.CHEST), "wool_chestplate"),
+	WOOL_PANTS(new WoolArmor("wool_leggings", EntityEquipmentSlot.LEGS), "wool_leggings"),
+	WOOL_SOCKS(new WoolArmor("wool_boots", EntityEquipmentSlot.FEET), "wool_boots");
 	
 	public final Item target;
 	public final String[] models;
