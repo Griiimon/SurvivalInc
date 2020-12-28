@@ -146,28 +146,28 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		// Apply the "side effects"
 //		this.consequences.apply(heat, player);
 
-		boolean isColdResistant= TraitModule.instance.HasTrait(TRAITS.WARM);
+		boolean isColdResistant= TraitModule.instance.HasTrait(player, TRAITS.WARM);
 		
-		float coldResistance= isColdResistant ? TraitModule.instance.TraitTier(TRAITS.WARM) + 1 : 0f; 
+		float coldResistance= isColdResistant ? TraitModule.instance.TraitTier(player, TRAITS.WARM) + 1 : 0f; 
 		
 		if(heat.getValue() < 10f - coldResistance)
 		{
 			if(Util.chance(1f))
 				new DamageStatEffect(HYPOTHERMIA, (float)ModConfig.HEAT.damageAmount, 10).apply(heat, player);
 			if(isColdResistant)
-				TraitModule.instance.UsingTrait(TRAITS.WARM, 5f);
+				TraitModule.instance.UsingTrait(player, TRAITS.WARM, 5f);
 		}
 		if(heat.getValue() < 20f - coldResistance)
 		{
 			new PotionStatEffect(MobEffects.MINING_FATIGUE, 0).apply(heat, player);
 			if(isColdResistant)
-				TraitModule.instance.UsingTrait(TRAITS.WARM, 1.5f);
+				TraitModule.instance.UsingTrait(player, TRAITS.WARM, 1.5f);
 		}
 		if(heat.getValue() < 25f - coldResistance)
 		{
 			new PotionStatEffect(MobEffects.WEAKNESS, 0).apply(record, player);
 			if(isColdResistant)
-				TraitModule.instance.UsingTrait(TRAITS.WARM);
+				TraitModule.instance.UsingTrait(player, TRAITS.WARM);
 			if(Util.chance(1f))
 				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, 1f, 1, false);
 		}
