@@ -11,6 +11,7 @@ public class SanityRecord extends SimpleStatRecord {
 	
 	protected int ticksAwake;
 	
+	
 	public SanityRecord()
 	{
 		super();
@@ -18,8 +19,6 @@ public class SanityRecord extends SimpleStatRecord {
 		this.setValueRange(SanityRecord.values);
 		this.ticksAwake = 0;
 		
-		// start with ultra haste-push
-		setValue(100f);
 	}
 	
 	public void resetSleep()
