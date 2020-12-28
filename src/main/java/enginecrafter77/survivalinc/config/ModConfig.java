@@ -15,6 +15,9 @@ public class ModConfig {
 	@Config.Name("general")
 	public static final GeneralConfig GENERAL = new GeneralConfig();
 	
+	@Config.Name("debug")
+	public static final DebugConfig DEBUG = new DebugConfig();
+
 	@Config.Name("client")
 	public static final ClientConfig CLIENT = new ClientConfig();
 	
