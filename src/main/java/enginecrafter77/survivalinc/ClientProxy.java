@@ -6,6 +6,7 @@ import enginecrafter77.survivalinc.client.ElementPositioner;
 import enginecrafter77.survivalinc.client.RenderHUD;
 import enginecrafter77.survivalinc.client.StatFillBar;
 import enginecrafter77.survivalinc.client.TextureResource;
+import enginecrafter77.survivalinc.client.TexturedColorElement;
 import enginecrafter77.survivalinc.client.TexturedElement;
 import enginecrafter77.survivalinc.client.TranslateRenderFilter;
 import enginecrafter77.survivalinc.config.ModConfig;
@@ -25,6 +26,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
 
 public class ClientProxy extends CommonProxy {
 	@Override
@@ -42,6 +44,7 @@ public class ClientProxy extends CommonProxy {
 		
 		TextureResource newicons = new TextureResource(new ResourceLocation(SurvivalInc.MOD_ID, "textures/gui/staticons.png"), 18, 18);
 		TextureResource sanityicon = new TextureResource(new ResourceLocation(SurvivalInc.MOD_ID, "textures/gui/sanity.png"), 32, 16);
+		TextureResource hastepushicon = new TextureResource(new ResourceLocation(SurvivalInc.MOD_ID, "textures/gui/hastepush.png"), 32, 16);
 		TranslateRenderFilter moveup = new TranslateRenderFilter(new ElementPositioner(0F, 0F, 0, -10));
 		if(ModConfig.HEAT.enabled)
 		{
@@ -71,12 +74,16 @@ public class ClientProxy extends CommonProxy {
 			
 			DifferentialArrow arrow= new DifferentialArrow(SanityTendencyModifier.instance, 8,12,true);
 			RenderHUD.instance.addIndependent(arrow, new ElementPositioner(0.5F, 1F, -2, -51));
+			
+			TexturedColorElement hastePushEffect= new TexturedColorElement(hastepushicon, 0, 0, 16, 16, true);
+			RenderHUD.instance.addIndependent(hastePushEffect, new ElementPositioner(0.5F, 1F, -8, -58));
 		}
 		if(ModConfig.GHOST.enabled)
 		{
 			RenderHUD.instance.addIndependent(new GhostEnergyBar(), new ElementPositioner(0.5F, 1F, -91, -39));
 			RenderHUD.instance.addFilterToAll(new GhostUIRenderFilter(), ElementType.HEALTH, ElementType.AIR, ElementType.ARMOR, ElementType.FOOD);
 		}
+		
 	}
 	
 	@Override

@@ -6,6 +6,8 @@ import java.util.Map;
 import com.google.common.collect.Range;
 
 import enginecrafter77.survivalinc.SurvivalInc;
+import enginecrafter77.survivalinc.client.DifferentialArrow;
+import enginecrafter77.survivalinc.client.TexturedColorElement;
 import enginecrafter77.survivalinc.config.ModConfig;
 import enginecrafter77.survivalinc.debug.SanityDebugCommand;
 import enginecrafter77.survivalinc.stats.StatProvider;
@@ -78,7 +80,7 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 		MinecraftForge.EVENT_BUS.register(SanityModifier.class);
 	
 		// this ain't working for some reason
-//		this.effects.add(SanityModifier::playStaticNoise).addFilter(SideEffectFilter.CLIENT);
+		this.effects.add(SanityModifier::lowSanityConsequences).addFilter(SideEffectFilter.CLIENT);
 
 	}
 	
@@ -105,19 +107,25 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 		sanity.checkoutValueChange();
 
 		
+		
 		// excited state / haste-push
 		if(sanity.getValue() == 100f)
 		{
+			if(Util.thisClientOnly(player))
+			{
+				TexturedColorElement.scale= tendency.getValue() / 100f;
+			}
+			
 			if(tendency.getValue()>0f)
 			{
-				boolean isEcstatic= TraitModule.instance.HasTrait(TRAITS.ECSTATIC);
+				boolean isEcstatic= TraitModule.instance.HasTrait(player, TRAITS.ECSTATIC);
 				
 				// dampener
 				float factor= tendency.getValue()/10000f;
 				
 				if(isEcstatic)
 				{
-					factor/= (TraitModule.instance.TraitTier(TRAITS.ECSTATIC)+1f) * 2f;
+					factor/= (TraitModule.instance.TraitTier(player, TRAITS.ECSTATIC)+1f) * 2f;
 				}
 				
 				// tendency dampener
@@ -126,29 +134,35 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 				if(tendency.getValue() > 50f)
 				{
 					new PotionStatEffect(MobEffects.HASTE, 2).apply(tendency, player);
-					new PotionStatEffect(MobEffects.SPEED, 2).apply(tendency, player);
+					new PotionStatEffect(MobEffects.SPEED, 1).apply(tendency, player);
 					if(isEcstatic)
-						TraitModule.instance.UsingTrait(TRAITS.ECSTATIC, 2f);
+						TraitModule.instance.UsingTrait(player, TRAITS.ECSTATIC, 2f);
 				}
 				else
 				if(tendency.getValue() > 20f)
 				{
 					new PotionStatEffect(MobEffects.HASTE, 1).apply(tendency, player);
-					new PotionStatEffect(MobEffects.SPEED, 1).apply(tendency, player);
+					new PotionStatEffect(MobEffects.SPEED, 0).apply(tendency, player);
 					if(isEcstatic)
-						TraitModule.instance.UsingTrait(TRAITS.ECSTATIC, 2f);
+						TraitModule.instance.UsingTrait(player, TRAITS.ECSTATIC, 2f);
 				}
 				else
 				if(tendency.getValue() > 5f)
 				{
 					new PotionStatEffect(MobEffects.HASTE, 0).apply(tendency, player);
-					new PotionStatEffect(MobEffects.SPEED, 0).apply(tendency, player);
 					if(isEcstatic)
-						TraitModule.instance.UsingTrait(TRAITS.ECSTATIC);
+						TraitModule.instance.UsingTrait(player, TRAITS.ECSTATIC);
 				}
 			}
 		}
-		
+		else
+		{
+			if(Util.thisClientOnly(player))
+			{
+				TexturedColorElement.scale= 0f;
+			}
+		}
+			
 	}
 
 	@Override
