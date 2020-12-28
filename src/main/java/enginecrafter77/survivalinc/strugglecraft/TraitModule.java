@@ -3,11 +3,23 @@ package enginecrafter77.survivalinc.strugglecraft;
 import java.util.ArrayList;
 import java.util.List;
 
+import enginecrafter77.survivalinc.SurvivalInc;
 import enginecrafter77.survivalinc.config.ModConfig;
+import enginecrafter77.survivalinc.stats.ListIntRecord;
+import enginecrafter77.survivalinc.stats.SimpleStatRecord;
+import enginecrafter77.survivalinc.stats.StatCapability;
+import enginecrafter77.survivalinc.stats.StatProvider;
+import enginecrafter77.survivalinc.stats.StatRecord;
+import enginecrafter77.survivalinc.stats.StatRegisterEvent;
+import enginecrafter77.survivalinc.stats.StatTracker;
+import enginecrafter77.survivalinc.stats.impl.SanityModifier;
+import enginecrafter77.survivalinc.stats.impl.SanityRecord;
 import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.util.Util;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 
 import net.minecraft.nbt.NBTTagCompound;
@@ -16,16 +28,20 @@ import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerRespawnEvent;
 
 
-public class TraitModule implements INBTSerializable<NBTTagCompound>{
+public class TraitModule implements StatProvider<ListIntRecord>{
+	private static final long serialVersionUID = 6269992840199029918L;
+
 	public static final int POS_TRAIT=0, NEG_TRAIT=1, NEUT_TRAIT=2;
 	
 	public static int traitIDctr=0;
 	
 	public static final int USAGE_FREQUENCY_MODERATELY= 10;
 	public static final int USAGE_FREQUENCY_OFTEN= 100;
-	public static final int USAGE_FREQUENCY_CONTINUOUSLY= 1000;
+	public static final int USAGE_FREQUENCY_VERY_OFTEN= 1000;
+	public static final int USAGE_FREQUENCY_CONTINUOUSLY= 10000;
 	
 	public enum TRAITS {
 		PETLOVER("Petlover", POS_TRAIT,70),
@@ -46,7 +62,7 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		AGGRESSIVE("Aggressive", POS_TRAIT,0),									// 40, but disabled cause aggressive potion effect may not have levels	
 		AMUSING("Amusing", POS_TRAIT,0),										// tells jokes to increase other players mood
 		CURIOUS("Curious", POS_TRAIT,0),
-		ECSTATIC("Ecstatic", POS_TRAIT,20),										// less haste-push dampening
+		ECSTATIC("Ecstatic", POS_TRAIT,20, USAGE_FREQUENCY_OFTEN),				// less haste-push dampening
 		DECADENT("Decadent", POS_TRAIT,0),
 		NOBLE("Noble", POS_TRAIT,0),	
 		DREAMER("Dreamer", POS_TRAIT,0),
@@ -105,7 +121,7 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		TRAITS(String s,int t, int c, int freq) { traitName=s; type=t; chance=c; id=traitIDctr;traitIDctr++; usageFrequency= freq;}
 		
 	}
-	
+/*	
 	public class TraitListEntry {
 		public TRAITS trait;
 		public int tier;
@@ -125,9 +141,10 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 	}
 	
 	public ArrayList<TraitListEntry> listTraits=new ArrayList<TraitListEntry>();
+*/
 	
-	EntityPlayer playerEntity;
-	int deathCtr= 0;
+//	EntityPlayer playerEntity;
+
 	
 	public static TraitModule instance= new TraitModule();
 	
@@ -139,84 +156,129 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 	{
 		MinecraftForge.EVENT_BUS.register(TraitModule.class);
 	}
-	
+/*	
 	@SubscribeEvent
 	public static void onSpawn(EntityJoinWorldEvent event)
 	{
-		if(event.getWorld().isRemote)
+		if(!event.getWorld().isRemote)
 			return;
 		
 		Entity ent= event.getEntity();
-		if(ent instanceof EntityPlayer)
+		if(ent instanceof EntityPlayer && !ent.isDead)
 		{
 			EntityPlayer player= (EntityPlayer) ent;
 			
 			if(!Util.thisClientOnly(player))
 				return;
 
-			instance.playerEntity= player;
+			StatTracker tracker = player.getCapability(StatCapability.target, null);
+			ListIntRecord record= tracker.getRecord(TraitModule.instance);
+
+
+			record.Clear();
 			
-			instance.listTraits.clear();
-
+			
 			for(int i= 0; i < 3; i++)
-				instance.AddRandomTrait();
+				instance.AddRandomTraits(player);
 		}
 	}
+*/	
 	
 	
-	@SubscribeEvent
-	public static void onEntityKilled(LivingDeathEvent event)
+	void ClearTraits(EntityPlayer player)
 	{
-		Entity ent= event.getEntity();
-		if(ent instanceof EntityPlayer && (EntityPlayer)ent == instance.playerEntity)
-		{
-			instance.deathCtr++;
-		}
-
+		StatTracker tracker = player.getCapability(StatCapability.target, null);
+		ListIntRecord record= tracker.getRecord(TraitModule.instance);
+		
+		record.Clear();
+	}
 	
+	ArrayList<Integer> getTraitList(EntityPlayer player)
+	{
+		StatTracker tracker = player.getCapability(StatCapability.target, null);
+		ListIntRecord record= tracker.getRecord(TraitModule.instance);
+		
+		return record.getList();
 	}
 
+	public boolean HasTrait(EntityPlayer player, TRAITS t)
+	{
+		StatTracker tracker = player.getCapability(StatCapability.target, null);
+		ListIntRecord record= tracker.getRecord(TraitModule.instance);
+
+		return HasTrait(record, t);
+	}
 	
-	public boolean HasTrait(TRAITS t)
+	public boolean HasTrait(ListIntRecord record, TRAITS t)
 	{
 		if(!ModConfig.TRAITS.enabled)
 			return false;
 		
-		for(int i=0; i < listTraits.size(); i++)
-			if(listTraits.get(i).trait == t)
+		
+		for(int i=0; i < record.getListSize(); i+= 2)
+			if(record.get(i) == t.id)
 				return true;
 		
 		return false;
 	}
 	
-	public int TraitTier(TRAITS t)
+	public int TraitTier(EntityPlayer player, TRAITS t)
 	{
-		for(int i=0; i < listTraits.size(); i++)
-			if(listTraits.get(i).trait == t)
-				return listTraits.get(i).tier + 1;
+		StatTracker tracker = player.getCapability(StatCapability.target, null);
+		ListIntRecord record= tracker.getRecord(TraitModule.instance);
 		
+		return TraitTier(record, t);
+	}
+	
+	public int TraitTier(ListIntRecord record, TRAITS t)
+	{
+
+		for(int i=0; i < record.getListSize(); i+= 2)
+			if(record.get(i) == t.id)
+				return record.get(i+1);
+				
 		return 0;
 		
 	}
 	
-	public TraitListEntry getEntry(TRAITS t)
+	public TRAITS getTrait(int id)
+	{
+		for(TRAITS t : TRAITS.values())
+			if(t.id == id)
+				return t;
+		return null;
+	}
+	
+/*	public TraitListEntry getEntry(TRAITS t)
 	{
 		for(TraitListEntry entry : listTraits)
 			if(entry.trait == t)
 				return entry;
 		return null;
 	}
-	
-	public void AddRandomTrait()
+*/
+
+	public void AddRandomTraits(EntityPlayer player)
 	{
+		StatTracker tracker = player.getCapability(StatCapability.target, null);
+		ListIntRecord record= tracker.getRecord(TraitModule.instance);
+//		AddRandomTrait(record);
+//	}
+	
+	
+//	public void AddRandomTrait(ListIntRecord record)
+//	{
 		TRAITS t;
 		int i=0;
 		
 //		playerEntity.sendMessage(new TextComponentString("Trying to add random trait"));
 
-		if( deathCtr>0)
+
+		
+		
+		if( DeathCounter.getDeaths(player)>0)
 		{
-			if(Util.chance(deathCtr*3))
+			if(Util.chance(DeathCounter.getDeaths(player)*3))
 			{
 //				playerEntity.sendMessage(new TextComponentString("Looking for negative trait"));
 				
@@ -229,11 +291,11 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 				if(i>2000)
 					return;
 				}
-				while((!HasTrait(t) && Util.chance(90f)) || Util.chance(100-t.chance));
+				while((!HasTrait(record, t) && Util.chance(90f)) || Util.chance(100-t.chance));
 			
 				
 				
-				AddTrait(t);
+				AddTrait(player, t);
 				return;
 			}
 		}
@@ -253,14 +315,14 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		i++;
 		if(i>2000)
 			return;
-		}	// chance + 5 per TRAITLEVEL
-		while((!HasTrait(t) && Util.chance(90)) || t.chance==0 || (t.type == POS_TRAIT && Util.rnd(100)>=(t.chance+playerEntity.experienceLevel-5)) || (t.type == NEUT_TRAIT && (Util.chance(100-t.chance) || Util.chance(deathCtr*3))));
+		}	// chance + 5 per TRAITLEVEL | TODO lower probabilty to add neut/neg trait the longer player has lived ( sum of all trait tiers)
+		while((!HasTrait(record, t) && Util.chance(90)) || t.chance==0 /*|| (t.type == POS_TRAIT && Util.rnd(100)>=(t.chance+playerEntity.experienceLevel-5))*/ || (t.type == NEUT_TRAIT && (Util.chance(100-t.chance) || Util.chance(DeathCounter.getDeaths(player)*3))));
 
 		int numNegTraits=0;
 		
-	    for(int j=0;j<listTraits.size();j++)
+	    for(int j=0;j<record.getListSize();j+= 2)
 	    {
-		     TRAITS trait= listTraits.get(j).trait;
+		     TRAITS trait= getTrait(record.get(j));
 		     if(trait.type== NEG_TRAIT)
 		    	 numNegTraits++;
 	    }
@@ -295,30 +357,40 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 	    }
 	    else
 */	    {
-			AddTrait(t);
+			AddTrait(player, t);
 //			playerEntity.addChatMessage("New Trait: "+t.traitName);
 	    }
-		
 
 	}
-	
-	public void AddTrait(TRAITS t)
+
+	public void AddTrait(EntityPlayer player, TRAITS t)
 	{
+		StatTracker tracker = player.getCapability(StatCapability.target, null);
+		ListIntRecord record= tracker.getRecord(TraitModule.instance);
+//		AddTrait(record, t);
+//	}
+	
+//	public void AddTrait(ListIntRecord record, TRAITS t)
+//	{
 		
 		boolean flag= false;
 		
-		for(int i=0; i < listTraits.size(); i++)
-			if(listTraits.get(i).trait == t)
+		for(int i=0; i < record.getListSize(); i+= 2)
+			if(record.get(i) == t.id)
 			{
-				listTraits.get(i).tier++;
-				playerEntity.sendMessage(new TextComponentString("Trait "+t.traitName+" Level + 1 => Level "+listTraits.get(i).tier + 1));
+				int newTier= record.get(i+1)+1;
+				record.set(i+1, newTier);
+				
+				player.sendMessage(new TextComponentString("Trait "+t.traitName+" Level Up => Level "+newTier));
 				flag=true;
 			}
 		
+		
 		if(!flag)
 		{
-			listTraits.add(new TraitListEntry(t));
-			playerEntity.sendMessage(new TextComponentString("New Trait "+t.traitName+" added !!"));
+			record.Add(t.id);
+			record.Add(0);
+			player.sendMessage(new TextComponentString("New Trait "+t.traitName+" added !!"));
 		}
 
 	}
@@ -346,22 +418,26 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 
 	}
 */	
-	public void AddRandomSpawnTrait()
+//	public void AddRandomSpawnTrait(ListIntRecord record)
+	public void AddRandomSpawnTrait(EntityPlayer player)
 	{
+		StatTracker tracker = player.getCapability(StatCapability.target, null);
+		ListIntRecord record= tracker.getRecord(TraitModule.instance);
+
 		TRAITS t;
 		int j=0;
 
-		listTraits.clear();
+		record.Clear();
 		
 		System.out.println("Adding random spawn trait");
 
 		
-		if( deathCtr>0)
+		if( DeathCounter.getDeaths(player)>0)
 		{
 			// 2 NEG's possible when death>10, 3 when death>20..,
-			for(int i=0; i<(Math.floor(deathCtr/10.0f)+1);i++)
+			for(int i=0; i<(Math.floor(DeathCounter.getDeaths(player)/10.0f)+1);i++)
 			{
-				if(Util.chance((deathCtr*3) > 90 ? 90 : (deathCtr*3)))
+				if(Util.chance((DeathCounter.getDeaths(player)*3) > 90 ? 90 : (DeathCounter.getDeaths(player)*3)))
 				{
 					do
 					{
@@ -369,16 +445,11 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 						{
 						}
 						j++;
-//						if(j>2000)
-//							return;
-						// !!!  !HasTrait && xchance missing
-		//				while(myrand.nextInt(100)>=t.chance);
-						if((!HasTrait(t) || TraitTier(t) < 5) && Util.chance(t.chance))
+						if((!HasTrait(record, t) || TraitTier(record, t) < 5) && Util.chance(t.chance))
 						{
-							AddTrait(t);
+							AddTrait(player, t);
 							return;
 						}
-		//				playerEntity.addChatMessage("New Trait: "+t.traitName);
 					} while(j < 2000);
 				}
 			
@@ -387,33 +458,33 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		}
 	}
 	
-	public void UsingTrait(TRAITS t)
+	public void UsingTrait(EntityPlayer player, TRAITS t)
 	{
-		UsingTrait(t, 1f);
+		UsingTrait(player, t, 1f);
 	}
 
 	
-	public void UsingTrait(TRAITS t, float factor)
+	public void UsingTrait(EntityPlayer player, TRAITS t, float factor)
 	{
-		TraitListEntry entry= getEntry(t);
-		
-		if(entry== null)
+		if(ModConfig.DEBUG.traits && !HasTrait(player, t))
 		{
 			String str= "ERROR: Using "+t.toString();
 			System.out.println(str);
-			playerEntity.sendMessage(new TextComponentString(str));
+			player.sendMessage(new TextComponentString(str));
 			return;
 		}
 		
-		if(Util.chanced((100f * factor) / (ModConfig.TRAITS.baseIncreaseDifficulty * Math.pow(entry.tier+1,2) * entry.trait.usageFrequency)))
+		int tier= TraitTier(player, t);
+		
+		if(Util.chanced((100f * factor) / (ModConfig.TRAITS.baseIncreaseDifficulty * Math.pow(tier+1,2) * t.usageFrequency)))
 		{
-			entry.tier++;
-			playerEntity.sendMessage(new TextComponentString("Trait Level Up: "+entry.trait.traitName+" Lvl "+(entry.tier+1)));
+			AddTrait(player, t);
+//			playerEntity.sendMessage(new TextComponentString("Trait Level Up: "+t.traitName+" Lvl "+(tier)));
 		}
 		
 	}
 	
-
+/*
 	@Override
 	public void deserializeNBT(NBTTagCompound nbt) {
 		int[]arr=  nbt.getIntArray("traits");
@@ -438,6 +509,43 @@ public class TraitModule implements INBTSerializable<NBTTagCompound>{
 		tag.setInteger("deaths", deathCtr);
 		return tag;
 
+	}
+*/
+	
+	@Override
+	public void update(EntityPlayer target, StatRecord record) {
+		if(target.world.isRemote)
+			return;
+		
+		ListIntRecord trec= (ListIntRecord) record;
+		
+		if(trec.getListSize() == 0)
+		{
+			for(int i= 0; i < 3; i++)
+				instance.AddRandomTraits(target);
+		}
+	}
+
+	@Override
+	public ResourceLocation getStatID() {
+		return new ResourceLocation(SurvivalInc.MOD_ID, "traits");
+	}
+
+	@Override
+	public ListIntRecord createNewRecord() {
+		ListIntRecord record= new ListIntRecord();
+		return record;
+	}
+
+	@Override
+	public Class<ListIntRecord> getRecordClass() {
+		return ListIntRecord.class;
+	}
+
+	@SubscribeEvent
+	public static void registerStat(StatRegisterEvent event)
+	{
+		event.register(TraitModule.instance);
 	}
 	
 }
