@@ -7,7 +7,7 @@ public class WetnessConfig {
 	
 	@Config.LangKey("config.survivalinc:wetness.enable")
 	@Config.RequiresMcRestart
-	public boolean enabled = false;
+	public boolean enabled = true;
 	
 	@Config.LangKey("config.survivalinc:wetness.passiveDryRate")
 	@Config.RangeDouble(min = 0)

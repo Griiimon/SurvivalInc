@@ -52,6 +52,8 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 	public final Map<Block, Float> humiditymap = new HashMap<Block, Float>();
 	public final EffectApplicator<SimpleStatRecord> effects;
 	public final UUID wetnessSlowdown;
+
+	int outOfWaterDelay= 0;
 	
 	public WetnessModifier()
 	{
@@ -140,12 +142,20 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 			mod += inclination * current + offset; // Direct relationship formula
 		}
 		
-		if(player.isInWater()) mod *= (float)ModConfig.WETNESS.submergedSlowdownFactor;
-		
+//		if(player.isInWater()) mod *= (float)ModConfig.WETNESS.submergedSlowdownFactor;
+	
 		// Ugh I really hate this code. It's damn ineffective. So much list IO to handle every single tick.
 		IAttributeInstance inst = player.getAttributeMap().getAttributeInstance(SharedMonsterAttributes.MOVEMENT_SPEED);
 		inst.removeModifier(WetnessModifier.instance.wetnessSlowdown);
-		inst.applyModifier(new AttributeModifier(WetnessModifier.instance.wetnessSlowdown, "wetnessSlowdown", mod, 1).setSaved(false));
+		if(!player.isInWater())
+		{
+			if(instance.outOfWaterDelay == 0)
+				inst.applyModifier(new AttributeModifier(WetnessModifier.instance.wetnessSlowdown, "wetnessSlowdown", mod, 1).setSaved(false));
+			else
+				instance.outOfWaterDelay--;
+		}
+		else
+			instance.outOfWaterDelay= 20;
 	}
 	
 	/**
