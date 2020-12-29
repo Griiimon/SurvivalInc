@@ -6,6 +6,7 @@ import java.util.Map;
 import com.google.common.collect.Range;
 
 import enginecrafter77.survivalinc.SurvivalInc;
+import enginecrafter77.survivalinc.client.StatFillBarHacked;
 import enginecrafter77.survivalinc.config.ModConfig;
 import enginecrafter77.survivalinc.stats.StatProvider;
 import enginecrafter77.survivalinc.stats.StatRecord;
@@ -135,6 +136,10 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		
 		target = targettemp.apply(player, target * (float)ModConfig.HEAT.tempCoefficient);
 		
+		// TODO ...
+		StatFillBarHacked.value= Math.max(0f, Math.min(150, target))/150f;
+		
+		
 		SimpleStatRecord heat = (SimpleStatRecord)record;
 		float difference = Math.abs(target - heat.getValue());
 		float rate = difference * (float)ModConfig.HEAT.heatExchangeFactor;
@@ -150,33 +155,50 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		
 		float coldResistance= isColdResistant ? TraitModule.instance.TraitTier(player, TRAITS.WARM) + 1 : 0f; 
 		
+		float sanityDrop= 0f;
+		
 		if(heat.getValue() < 10f - coldResistance)
 		{
 			if(Util.chance(1f))
 				new DamageStatEffect(HYPOTHERMIA, (float)ModConfig.HEAT.damageAmount, 10).apply(heat, player);
 			if(isColdResistant)
-				TraitModule.instance.UsingTrait(player, TRAITS.WARM, 5f);
+				TraitModule.instance.UsingTrait(player, TRAITS.WARM);
+			sanityDrop+= 0.05f;
 		}
 		if(heat.getValue() < 20f - coldResistance)
 		{
 			new PotionStatEffect(MobEffects.MINING_FATIGUE, 0).apply(heat, player);
 			if(isColdResistant)
-				TraitModule.instance.UsingTrait(player, TRAITS.WARM, 1.5f);
+				TraitModule.instance.UsingTrait(player, TRAITS.WARM);
+			sanityDrop+= 0.01f;
 		}
 		if(heat.getValue() < 25f - coldResistance)
 		{
 			new PotionStatEffect(MobEffects.WEAKNESS, 0).apply(record, player);
 			if(isColdResistant)
 				TraitModule.instance.UsingTrait(player, TRAITS.WARM);
-			if(Util.chance(1f))
+			if(Util.chance(0.5f))
 				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, 1f, 1, false);
+			sanityDrop+= 0.001f;
 		}
+		
+		if(sanityDrop > 0f)
+		{
+			SanityTendencyModifier.instance.addToTendency(-sanityDrop, "Cold", player);
+			sanityDrop= 0f;
+		}
+		
 		if(heat.getValue() > 110f)
 		{
 			onHighTemperature(record, player);
 			if(Util.chance(1f))
 				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, 1f, 1, false);
+			SanityTendencyModifier.instance.addToTendency(-0.01f, "Heat", player);
 		}
+		
+		if(heat.getValue() > 45f && heat.getValue()<55f)
+			SanityTendencyModifier.instance.addToTendency(0.001f, "Perfect temperature", player);
+			
 		
 		// If the current value is higher than the target, go down instead of up
 		if(heat.getValue() > target) rate *= -1;
@@ -284,5 +306,13 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		}
 		
 		return current + heat;
+	}
+	
+	public float getPlayerTemperature(EntityPlayer player)
+	{
+		StatTracker stats = player.getCapability(StatCapability.target, null);
+		SimpleStatRecord heat = stats.getRecord(HeatModifier.instance);
+
+		return heat.getValue();
 	}
 }
