@@ -1,11 +1,14 @@
 package enginecrafter77.survivalinc.strugglecraft;
 
+import java.util.Random;
 import java.util.UUID;
 
 import enginecrafter77.survivalinc.SurvivalInc;
 import enginecrafter77.survivalinc.config.ModConfig;
 import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.util.Util;
+import net.minecraft.block.BlockTallGrass;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
@@ -19,6 +22,9 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.world.BlockEvent.CropGrowEvent;
+import net.minecraftforge.event.world.BlockEvent.HarvestDropsEvent;
+import net.minecraftforge.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
@@ -116,6 +122,36 @@ public class Tweaks {
  			((EntityPlayer)event.getEntity()).getFoodStats().addExhaustion((float)ModConfig.TWEAKS.jumpExhaustion);
 		
 	}
+	
+	@SubscribeEvent
+	public static void onCropGrowth(CropGrowEvent.Pre event)
+	{
+		if(Util.chance(90f))
+			event.setResult(Result.DENY);
+	}
+	
+	// does this even has any effect?
+	@SubscribeEvent
+	public static void onDrop(HarvestDropsEvent event) {
+	    if (event.isSilkTouching()) {
+	        return;
+	    }
+
+	    final IBlockState state = event.getState();
+
+	    // Skip Air or Error
+	    if (state == null || state.getBlock() == null) {
+	        return;
+	    }
+
+
+	    if (state.getBlock() instanceof BlockTallGrass) {
+	    	if(Util.chance(90f))
+	    		event.getDrops().clear();
+	    }
+	}
+	 
+	
 	
 	public static void postInit()
 	{
