@@ -1,8 +1,10 @@
 package enginecrafter77.survivalinc;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import enginecrafter77.survivalinc.block.*;
+import enginecrafter77.survivalinc.strugglecraft.*;
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.item.Item;
@@ -21,13 +23,22 @@ public enum ModBlocks implements Supplier<Block> {
 	MELTING_SNOW(new BlockMeltingSnow()),
 	MELTING_ICE(new BlockMeltingIce()),
 	HEATER(new BlockHeater(false)),
-	LIT_HEATER(new BlockHeater(true));
+	LIT_HEATER(new BlockHeater(true)),
+	WEED_CROP(new BlockDrugsCrop("weed_crop")/*, postInit(ModItems.WEED.getItem(), ModItems.WEED_SEEDS.getItem())*/);
 	
 	private final Block instance;
+	private final Function postInitFunction;
 	
-	private ModBlocks(Block instance)
+	private ModBlocks(Block instance) 
+	{
+		 this(instance, null);
+	}
+	
+	
+	private ModBlocks(Block instance, Function func)
 	{
 		this.instance = instance;
+		postInitFunction= func;
 	}
 	
 	@Override

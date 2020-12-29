@@ -1,7 +1,11 @@
 package enginecrafter77.survivalinc;
 
 import enginecrafter77.survivalinc.item.*;
+import enginecrafter77.survivalinc.ModBlocks;
 import enginecrafter77.survivalinc.strugglecraft.WoolArmor;
+import enginecrafter77.survivalinc.strugglecraft.ItemDrug;
+import enginecrafter77.survivalinc.strugglecraft.Drug;
+import enginecrafter77.survivalinc.strugglecraft.ItemDrugsSeed;
 
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -24,7 +28,10 @@ public enum ModItems {
 	WOOL_HAT(new WoolArmor("wool_helmet", EntityEquipmentSlot.HEAD), "wool_helmet"),
 	WOOL_SWEATER(new WoolArmor("wool_chestplate", EntityEquipmentSlot.CHEST), "wool_chestplate"),
 	WOOL_PANTS(new WoolArmor("wool_leggings", EntityEquipmentSlot.LEGS), "wool_leggings"),
-	WOOL_SOCKS(new WoolArmor("wool_boots", EntityEquipmentSlot.FEET), "wool_boots");
+	WOOL_SOCKS(new WoolArmor("wool_boots", EntityEquipmentSlot.FEET), "wool_boots"),
+	WEED(new Item().setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, "weed")).setCreativeTab(SurvivalInc.mainTab), "weed"),
+	WEED_SEEDS(new ItemDrugsSeed("weed_seeds", ModBlocks.WEED_CROP, WEED), "weed_seeds"),
+	JOINT(new ItemDrug(Drug.JOINT), "joint");
 	
 	public final Item target;
 	public final String[] models;
