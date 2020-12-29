@@ -5,8 +5,8 @@ import net.minecraftforge.common.config.Config;
 @Config.LangKey("config.survivalinc:debug")
 public class DebugConfig {
 	
-	@Config.LangKey("config.survivalinc:traits.enable")
+	@Config.LangKey("config.survivalinc:debug.traits")
 	@Config.RequiresMcRestart
-	public boolean traits = true;
+	public boolean traits= true;
 	
 }
