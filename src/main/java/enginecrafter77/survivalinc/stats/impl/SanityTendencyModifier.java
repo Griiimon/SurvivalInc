@@ -77,8 +77,9 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	{
 		public String name;
 		public float value;
+		public boolean oneTime;
 		
-		public ReasonEntry(String n, float v) {	name= n; value= v; }
+		public ReasonEntry(String n, float v, boolean b) {	name= n; value= v; oneTime= b;}
 	}
 
 	ArrayList<ReasonEntry> reasons;
@@ -134,6 +135,11 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		}
 	}
 	
+	public void addToTendencyOneTime(float value, String reason, EntityPlayer player)
+	{
+		addToTendency(value, reason, player, true, true);
+	}
+	
 	public void addToTendency(float value, String reason, EntityPlayer player)
 	{
 		addToTendency(value, reason, player, false);
@@ -142,8 +148,14 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 	
 	public void addToTendency(float value, String reason, EntityPlayer player, boolean forceAddReason)
 	{
+		addToTendency(value, reason, player, forceAddReason, false);
+	}
+
+	
+	public void addToTendency(float value, String reason, EntityPlayer player, boolean forceAddReason, boolean oneTime)
+	{
 		StatTracker stats = player.getCapability(StatCapability.target, null);
-		addToTendency(value, reason, stats.getRecord(SanityTendencyModifier.instance), forceAddReason);
+		addToTendency(value, reason, stats.getRecord(SanityTendencyModifier.instance), forceAddReason, oneTime);
 
 	}
 	
@@ -155,6 +167,11 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 
 	
 	public void addToTendency(float value, String reason, SanityRecord record, boolean forceAddReason)
+	{
+		addToTendency(value, reason, record, forceAddReason, false);
+	}
+	
+	public void addToTendency(float value, String reason, SanityRecord record, boolean forceAddReason, boolean oneTime)
 	{
 		record.addToValue(value);
 		
@@ -173,7 +190,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 			
 			if(!alreadyUsed)
 			{
-				reasons.add(new ReasonEntry(reason, value));
+				reasons.add(new ReasonEntry(reason, value, oneTime));
 			}
 		}
 		
@@ -214,13 +231,15 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 				
 				String postStr= ""+c;
 				
-				if(Math.abs(value) > 0.01f)
+				float factor= reasons.get(0).oneTime ? 50f : 1f;
+				
+				if(Math.abs(value) > 0.01f * factor)
 					postStr+= ""+c;
 				
-				if(Math.abs(value) > 0.03f)
+				if(Math.abs(value) > 0.03f * factor)
 					postStr+= ""+c;
 
-				if(Math.abs(value) > 0.1f)
+				if(Math.abs(value) > 0.1f * factor)
 					postStr+= ""+c;
 
 				currentReasonStr+= " "+postStr;
@@ -341,7 +360,8 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 		SimpleStatRecord wetness = stats.getRecord(WetnessModifier.instance);		
 		if(wetness.getNormalizedValue() > boundary)
 		{
-			instance.addToTendency(((wetness.getNormalizedValue() - boundary) / (1F - boundary)) * -(float)ModConfig.SANITY.maxWetnessAnnoyance, "Wet", record);
+			float temperatureFactor= Math.max(1f, 40f/Math.max(1f, HeatModifier.instance.getPlayerTemperature(player)));
+			instance.addToTendency(temperatureFactor*((wetness.getNormalizedValue() - boundary) / (1F - boundary)) * -(float)ModConfig.SANITY.maxWetnessAnnoyance, "Wet", record);
 		}
 	}
 	
@@ -474,7 +494,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 
 		if(ent instanceof EntityPlayer)
 		{
-			instance.addToTendency((float)ModConfig.SANITY.animalTameBoost, "taming", (EntityPlayer)ent);
+			instance.addToTendencyOneTime((float)ModConfig.SANITY.animalTameBoost, "taming", (EntityPlayer)ent);
 		}
 	}
 	
@@ -496,21 +516,21 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 			if(target instanceof EntityMob)
 			{
 				if(TraitModule.instance.HasTrait(player,TRAITS.PACIFIST))
-					instance.addToTendency(-(float)ModConfig.SANITY.mobKill, "pacifist", player);				
+					instance.addToTendencyOneTime(-(float)ModConfig.SANITY.mobKill, "pacifist", player);				
 				else
-					instance.addToTendency((float)ModConfig.SANITY.mobKill, "mob killed", player);				
+					instance.addToTendencyOneTime((float)ModConfig.SANITY.mobKill, "mob killed", player);				
 			}
 
 			if(TraitModule.instance.HasTrait(player,TRAITS.BLOODTHIRSTY))
 			{
-				instance.addToTendency((TraitModule.instance.TraitTier(player,TRAITS.BLOODTHIRSTY) + 1 ) /10f, "killed something", player);				
+				instance.addToTendencyOneTime((TraitModule.instance.TraitTier(player,TRAITS.BLOODTHIRSTY) + 1 ) /10f, "killed something", player);				
 				TraitModule.instance.UsingTrait(player,TRAITS.BLOODTHIRSTY);
 			}
 			
 			if(target instanceof EntityAnimal)
 			{
 				if(TraitModule.instance.HasTrait(player,TRAITS.ANIMAL_LOVER))
-					instance.addToTendency(-0.5f, "Poor animal", player);
+					instance.addToTendencyOneTime(-1.5f, "Poor animal", player);
 			}
 		}
 	}
@@ -545,7 +565,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord> {
 			}
 			
 			if(!skipSanity)
-				instance.addToTendency((float)(ModConfig.SANITY.hurt * factor), "Ouch", player, true);
+				instance.addToTendencyOneTime((float)(ModConfig.SANITY.hurt * factor), "Ouch", player);
 			
 			if(isMasochist)
 				TraitModule.instance.UsingTrait(player,TRAITS.MASOCHIST);
