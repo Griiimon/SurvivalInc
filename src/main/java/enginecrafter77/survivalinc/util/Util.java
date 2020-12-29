@@ -25,6 +25,12 @@ public class Util {
 	{
 		return (int)Math.floor(Math.random()*r);
 	}
+
+	public static int rnd(int min, int max)
+	{
+		return (int)Math.floor(Math.random()*(max-min)+min);
+	}
+
 	
 	public static float rndf(float r)
 	{
