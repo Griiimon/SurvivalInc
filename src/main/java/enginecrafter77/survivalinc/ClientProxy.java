@@ -5,6 +5,7 @@ import enginecrafter77.survivalinc.client.Direction2D;
 import enginecrafter77.survivalinc.client.ElementPositioner;
 import enginecrafter77.survivalinc.client.RenderHUD;
 import enginecrafter77.survivalinc.client.StatFillBar;
+import enginecrafter77.survivalinc.client.StatFillBarHacked;
 import enginecrafter77.survivalinc.client.TextureResource;
 import enginecrafter77.survivalinc.client.TexturedColorElement;
 import enginecrafter77.survivalinc.client.TexturedElement;
@@ -45,6 +46,7 @@ public class ClientProxy extends CommonProxy {
 		TextureResource newicons = new TextureResource(new ResourceLocation(SurvivalInc.MOD_ID, "textures/gui/staticons.png"), 18, 18);
 		TextureResource sanityicon = new TextureResource(new ResourceLocation(SurvivalInc.MOD_ID, "textures/gui/sanity.png"), 32, 16);
 		TextureResource hastepushicon = new TextureResource(new ResourceLocation(SurvivalInc.MOD_ID, "textures/gui/hastepush.png"), 32, 16);
+		TextureResource thermometericon = new TextureResource(new ResourceLocation(SurvivalInc.MOD_ID, "textures/gui/thermometer.png"), 16, 32);
 		TranslateRenderFilter moveup = new TranslateRenderFilter(new ElementPositioner(0F, 0F, 0, -10));
 		if(ModConfig.HEAT.enabled)
 		{
@@ -54,6 +56,13 @@ public class ClientProxy extends CommonProxy {
 			bar.setSpacing(-1);
 			RenderHUD.instance.addIndependent(bar, new ElementPositioner(0.5F, 1F, -91, -49));
 			RenderHUD.instance.addFilter(moveup, ElementType.ARMOR);
+			
+			// TODO ...
+			StatFillBarHacked<SimpleStatRecord> thermo = new StatFillBarHacked<SimpleStatRecord>(Direction2D.UP, new TexturedElement(thermometericon, 0, 0, 8, 32, true));
+			thermo.addOverlay(new TexturedElement(thermometericon, 8, 0, 8, 32, true));
+			thermo.setCapacity(1);
+			RenderHUD.instance.addIndependent(thermo, new ElementPositioner(0.5F, 1F, -100, -31));
+			RenderHUD.instance.addFilter(moveup, ElementType.SUBTITLES);
 		}
 		if(ModConfig.HYDRATION.enabled)
 		{
@@ -75,8 +84,9 @@ public class ClientProxy extends CommonProxy {
 			DifferentialArrow arrow= new DifferentialArrow(SanityTendencyModifier.instance, 8,12,true);
 			RenderHUD.instance.addIndependent(arrow, new ElementPositioner(0.5F, 1F, -2, -51));
 			
+			// TODO use via GUI_ID or something
 			TexturedColorElement hastePushEffect= new TexturedColorElement(hastepushicon, 0, 0, 16, 16, true);
-			RenderHUD.instance.addIndependent(hastePushEffect, new ElementPositioner(0.5F, 1F, -8, -58));
+			RenderHUD.instance.addIndependent(hastePushEffect, new ElementPositioner(0.5F, 1F, -8, -59));
 		}
 		if(ModConfig.GHOST.enabled)
 		{
