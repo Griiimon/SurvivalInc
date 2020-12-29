@@ -27,6 +27,7 @@ import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.stats.impl.WetnessModifier;
 import enginecrafter77.survivalinc.strugglecraft.DeathCounter;
 import enginecrafter77.survivalinc.strugglecraft.DeathsCommand;
+import enginecrafter77.survivalinc.strugglecraft.DrugModule;
 import enginecrafter77.survivalinc.strugglecraft.FavouriteFoodCommand;
 import enginecrafter77.survivalinc.strugglecraft.Tweaks;
 import enginecrafter77.survivalinc.strugglecraft.FoodModule;
@@ -89,6 +90,7 @@ public class CommonProxy {
 		
 		if(ModConfig.FOOD.enabled) FoodModule.instance.init();
 		if(ModConfig.TWEAKS.enabled) Tweaks.instance.init();
+		if(ModConfig.DRUGS.enabled) DrugModule.instance.init();
 		
 		
 		
