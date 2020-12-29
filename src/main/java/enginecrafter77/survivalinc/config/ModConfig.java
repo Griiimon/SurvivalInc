@@ -45,6 +45,9 @@ public class ModConfig {
 	@Config.Name("food")
 	public static final FoodConfig FOOD = new FoodConfig();
 
+	@Config.Name("drugs")
+	public static final DrugConfig DRUGS = new DrugConfig();
+
 	@Config.Name("tweaks")
 	public static final TweaksConfig TWEAKS = new TweaksConfig();
 
