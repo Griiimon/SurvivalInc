@@ -54,7 +54,7 @@ public class ClientProxy extends CommonProxy {
 			bar.addOverlay(new TexturedElement(newicons, 9, 0, 9, 9, true), SimpleStatRecord::getNormalizedValue);
 			bar.setCapacity(10);
 			bar.setSpacing(-1);
-			RenderHUD.instance.addIndependent(bar, new ElementPositioner(0.5F, 1F, -91, -49));
+			RenderHUD.instance.addIndependent(bar, new ElementPositioner(0.5F, 1F, 10, -49));
 			RenderHUD.instance.addFilter(moveup, ElementType.ARMOR);
 			
 			// TODO ...
@@ -70,7 +70,7 @@ public class ClientProxy extends CommonProxy {
 			bar.addOverlay(new TexturedElement(newicons, 9, 9, 9, 9, true), SimpleStatRecord::getNormalizedValue);
 			bar.setCapacity(10);
 			bar.setSpacing(-1);
-			RenderHUD.instance.addIndependent(bar, new ElementPositioner(0.5F, 1F, 10, -49));
+			RenderHUD.instance.addIndependent(bar, new ElementPositioner(0.5F, 1F, -91, -49));
 			RenderHUD.instance.addFilter(moveup, ElementType.AIR);
 		}
 		if(ModConfig.SANITY.enabled)
@@ -104,4 +104,11 @@ public class ClientProxy extends CommonProxy {
 		if(RenderHUD.instance.isUseful()) MinecraftForge.EVENT_BUS.register(RenderHUD.instance);
 		if(ModConfig.GHOST.enabled) MinecraftForge.EVENT_BUS.register(new RenderGhost());
 	}
+
+	@Override
+	public void AddReasonToClient(float value, String reason, boolean forceAdd)
+	{
+		SanityTendencyModifier.instance.AddReason(value, reason, forceAdd, true);
+	}
+
 }
