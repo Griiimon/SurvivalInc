@@ -31,7 +31,16 @@ public enum ModItems {
 	WOOL_SOCKS(new WoolArmor("wool_boots", EntityEquipmentSlot.FEET), "wool_boots"),
 	WEED(new Item().setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, "weed")).setCreativeTab(SurvivalInc.mainTab), "weed"),
 	WEED_SEEDS(new ItemDrugsSeed("weed_seeds", ModBlocks.WEED_CROP, WEED), "weed_seeds"),
-	JOINT(new ItemDrug(Drug.JOINT), "joint");
+	JOINT(new ItemDrug(Drug.JOINT), "joint"),
+	TOBACCO(new Item().setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, "tobacco")).setCreativeTab(SurvivalInc.mainTab), "tobacco"),
+	TOBACCO_SEEDS(new ItemDrugsSeed("tobacco_seeds", ModBlocks.TOBACCO_CROP, TOBACCO), "tobacco_seeds"),
+	CIGARETTE(new ItemDrug(Drug.CIGARETTE), "cigarette"),
+	COCA_LEAVES(new ItemDrug(Drug.COCA_LEAVES), "coca_leaves"),
+	COCA_SEEDS(new ItemDrugsSeed("coca_seeds", ModBlocks.COCA_CROP, COCA_LEAVES), "coca_seeds"),
+	OPIUM(new Item().setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, "opium")).setCreativeTab(SurvivalInc.mainTab), "opium"),
+	POPPY_SEEDS(new ItemDrugsSeed("poppy_seeds", ModBlocks.POPPY_CROP, OPIUM), "poppy_seeds"),
+	PIPE(new ItemDrug(Drug.OPIUM_PIPE), "pipe"),
+	UMBRELLA(new Item().setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, "umbrella")).setCreativeTab(SurvivalInc.mainTab), "umbrella");
 	
 	public final Item target;
 	public final String[] models;

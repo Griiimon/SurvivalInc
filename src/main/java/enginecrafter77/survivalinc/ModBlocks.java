@@ -24,21 +24,16 @@ public enum ModBlocks implements Supplier<Block> {
 	MELTING_ICE(new BlockMeltingIce()),
 	HEATER(new BlockHeater(false)),
 	LIT_HEATER(new BlockHeater(true)),
-	WEED_CROP(new BlockDrugsCrop("weed_crop")/*, postInit(ModItems.WEED.getItem(), ModItems.WEED_SEEDS.getItem())*/);
+	WEED_CROP(new BlockDrugsCrop("weed_crop")),
+	TOBACCO_CROP(new BlockDrugsCrop("tobacco_crop")),
+	COCA_CROP(new BlockDrugsCrop("coca_crop")),
+	POPPY_CROP(new BlockDrugsCrop("poppy_crop"));
 	
 	private final Block instance;
-	private final Function postInitFunction;
 	
-	private ModBlocks(Block instance) 
-	{
-		 this(instance, null);
-	}
-	
-	
-	private ModBlocks(Block instance, Function func)
+	private ModBlocks(Block instance)
 	{
 		this.instance = instance;
-		postInitFunction= func;
 	}
 	
 	@Override
