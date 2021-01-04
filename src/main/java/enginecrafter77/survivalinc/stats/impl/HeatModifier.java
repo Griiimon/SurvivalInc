@@ -21,6 +21,7 @@ import enginecrafter77.survivalinc.stats.effect.FunctionalEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.PotionStatEffect;
 import enginecrafter77.survivalinc.strugglecraft.TraitModule;
 import enginecrafter77.survivalinc.strugglecraft.TraitModule.TRAITS;
+import enginecrafter77.survivalinc.strugglecraft.WoolArmor;
 import enginecrafter77.survivalinc.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayer;
@@ -46,6 +47,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public class HeatModifier implements StatProvider<SimpleStatRecord> {
 	private static final long serialVersionUID = 6260092840749029918L;
 	
+	public static Map<String, ItemArmor.ArmorMaterial> customArmorTypes= new HashMap<String, ItemArmor.ArmorMaterial>();
+	
 	public static final DamageSource HYPERTHERMIA = new DamageSource("survivalinc_hyperthermia").setDamageIsAbsolute().setDamageBypassesArmor();
 	public static final DamageSource HYPOTHERMIA = new DamageSource("survivalinc_hypothermia").setDamageIsAbsolute().setDamageBypassesArmor();
 	
@@ -57,6 +60,8 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 	public final FunctionalCalculator targettemp;
 	public final FunctionalCalculator exchangerate;
 	public final EffectApplicator<SimpleStatRecord> consequences;
+	
+	
 	
 	public HeatModifier()
 	{
@@ -75,6 +80,7 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		
 		// Even with Wetness turn off this still applies to swimming
 		this.exchangerate.add(HeatModifier::applyWetnessCooldown);
+		this.exchangerate.add(HeatModifier::applyBedInsulation);
 		this.exchangerate.add(this.armorInsulation);
 		
 
@@ -88,11 +94,18 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 			this.blockHeatMap.put(target, value);
 		}
 		
+		customArmorTypes.put("WOOL", WoolArmor.woolMaterial);
+		
 		// Armor heat isolation
 		for(String entry : ModConfig.HEAT.armorMaterialConductivity)
 		{
 			int separator = entry.lastIndexOf(' ');
-			ItemArmor.ArmorMaterial target = ItemArmor.ArmorMaterial.valueOf(entry.substring(0, separator).toUpperCase());
+			String targetName= entry.substring(0, separator).toUpperCase();
+			ItemArmor.ArmorMaterial target;
+			if(customArmorTypes.containsKey(targetName))
+				target= customArmorTypes.get(targetName);
+			else
+				target = ItemArmor.ArmorMaterial.valueOf(targetName);
 			Float value = Float.parseFloat(entry.substring(separator + 1));
 			this.armorInsulation.addArmorType(target, value);
 		}
@@ -107,7 +120,7 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 	@Override
 	public void update(EntityPlayer player, StatRecord record)
 	{
-		if(player.isCreative() || player.isSpectator()/* || player.world.isRemote*/) return;
+		if(player.isCreative() || player.isSpectator() || player.isDead/* || player.world.isRemote*/) return;
 		
 		float target;
 
@@ -134,10 +147,14 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		if(target < -0.2F) target = -0.2F;
 		if(target > 1.5F) target = 1.5F;
 		
+		if(target < 0.4f && player.isPlayerSleeping())
+			target+= Math.min(0.4f - target, 0.2f);
+		
 		target = targettemp.apply(player, target * (float)ModConfig.HEAT.tempCoefficient);
 		
 		// TODO ...
-		StatFillBarHacked.value= Math.max(0f, Math.min(150, target))/150f;
+		if(Util.thisClientOnly(player))
+			StatFillBarHacked.value= Math.max(0f, Math.min(150, target))/150f;
 		
 		
 		SimpleStatRecord heat = (SimpleStatRecord)record;
@@ -163,14 +180,14 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 				new DamageStatEffect(HYPOTHERMIA, (float)ModConfig.HEAT.damageAmount, 10).apply(heat, player);
 			if(isColdResistant)
 				TraitModule.instance.UsingTrait(player, TRAITS.WARM);
-			sanityDrop+= 0.05f;
+			sanityDrop+= 0.01f;
 		}
 		if(heat.getValue() < 20f - coldResistance)
 		{
 			new PotionStatEffect(MobEffects.MINING_FATIGUE, 0).apply(heat, player);
 			if(isColdResistant)
 				TraitModule.instance.UsingTrait(player, TRAITS.WARM);
-			sanityDrop+= 0.01f;
+			sanityDrop+= 0.005f;
 		}
 		if(heat.getValue() < 25f - coldResistance)
 		{
@@ -188,12 +205,18 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 			sanityDrop= 0f;
 		}
 		
+		
 		if(heat.getValue() > 110f)
 		{
 			onHighTemperature(record, player);
 			if(Util.chance(1f))
 				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, 1f, 1, false);
-			SanityTendencyModifier.instance.addToTendency(-0.01f, "Heat", player);
+			SanityTendencyModifier.instance.addToTendency(-0.01f, "Very hot", player);
+		}
+		else
+		if(heat.getValue() > 90f)
+		{
+			SanityTendencyModifier.instance.addToTendency(-0.001f, "Hot", player);
 		}
 		
 		if(heat.getValue() > 45f && heat.getValue()<55f)
@@ -256,6 +279,13 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 			wetnessFactor= wetness.getNormalizedValue();
 		}
 		return current * (1F + (float)ModConfig.HEAT.wetnessExchangeMultiplier * wetnessFactor);
+	}
+
+	public static float applyBedInsulation(EntityPlayer player, float current)
+	{
+		if(player.isPlayerSleeping())
+			return current * 0.2f;
+		return current * 1f;
 	}
 	
 	/**
