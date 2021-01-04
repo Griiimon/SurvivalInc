@@ -75,4 +75,8 @@ public class BlockDrugsCrop extends BlockCrops{
         return cropItem;
     }
 	
+	public IBlockState getGrownState()
+	{
+		return blockState.getBaseState().withProperty(this.getAgeProperty(), Integer.valueOf(7));
+	}
 }
