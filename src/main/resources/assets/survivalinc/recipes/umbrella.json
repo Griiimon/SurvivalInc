@@ -1,0 +1,22 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [
+		"###",
+		" S ",
+		" S "
+	],
+	"key": {
+		"#": {
+			"type": "forge:ore_dict",
+			"ore": "itemRubber"
+		},
+		"S": {
+			"item": "minecraft:stick",
+			"data": 0
+		}
+	},
+	"result": {
+		"item": "survivalinc:umbrella",
+		"data": 0
+	}
+}
