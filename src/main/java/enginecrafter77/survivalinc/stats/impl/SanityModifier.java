@@ -9,6 +9,7 @@ import enginecrafter77.survivalinc.SurvivalInc;
 import enginecrafter77.survivalinc.client.DifferentialArrow;
 import enginecrafter77.survivalinc.client.TexturedColorElement;
 import enginecrafter77.survivalinc.config.ModConfig;
+import enginecrafter77.survivalinc.debug.LightDebugCommand;
 import enginecrafter77.survivalinc.debug.SanityDebugCommand;
 import enginecrafter77.survivalinc.stats.StatProvider;
 import enginecrafter77.survivalinc.stats.StatRecord;
@@ -31,6 +32,7 @@ import net.minecraft.client.shader.ShaderGroup;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.MobEffects;
 import net.minecraft.item.ItemArmor;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
@@ -79,8 +81,7 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 	{
 		MinecraftForge.EVENT_BUS.register(SanityModifier.class);
 	
-		// this ain't working for some reason
-		this.effects.add(SanityModifier::lowSanityConsequences).addFilter(SideEffectFilter.CLIENT);
+		this.effects.add(SanityModifier::lowSanityConsequences);//.addFilter(SideEffectFilter.CLIENT);
 
 	}
 	
@@ -93,7 +94,7 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 	@Override
 	public void update(EntityPlayer player, StatRecord record)
 	{
-		if(player.isCreative() || player.isSpectator() /*|| player.world.isRemote*/) return;
+		if(player.isCreative() || player.isSpectator() || player.isDead/*|| player.world.isRemote*/) return;
 		
 		StatTracker tracker = player.getCapability(StatCapability.target, null);
 		
@@ -103,6 +104,9 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 		SanityRecord tendency = tracker.getRecord(SanityTendencyModifier.instance);
 
 		SimpleStatRecord sanity= (SimpleStatRecord) record;
+		// TODO correct?
+		this.effects.apply(sanity, player);
+		
 		sanity.addToValue((float)(tendency.getValue() * ModConfig.SANITY.tendencyImpact));
 		sanity.checkoutValueChange();
 
@@ -190,53 +194,75 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 	{
 		float threshold = (float)ModConfig.SANITY.hallucinationThreshold * 100f;
 
-		if(player.world.getWorldTime() % 160 == 0)
+		if(player.world.getWorldTime() % 160 == 0 && !player.isPlayerSleeping())
 		{
-			/**
-			 * This effect should only apply to the client player.
-			 * Other player entities on client-side world should
-			 * not be evaluated.
-			 */
-			Minecraft client = Minecraft.getMinecraft();
-			if(player == client.player) 
-				return;
-			
-//			if(Util.chance(25) && record.getValue() < threshold)
+
+
 			if(Util.chance((threshold - record.getValue()) * (100f / (float)threshold)))
 			{
-				// collection of spooky sounds
-				SoundEvent[] sounds= new SoundEvent[] {SoundEvents.BLOCK_FIRE_AMBIENT, SoundEvents.ENTITY_ZOMBIE_AMBIENT, SoundEvents.ENTITY_ZOMBIE_ATTACK_DOOR_WOOD, SoundEvents.ENTITY_CREEPER_PRIMED, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundEvents.ENTITY_GHAST_SCREAM, SoundEvents.ENTITY_HOSTILE_BIG_FALL, SoundEvents.BLOCK_LAVA_POP, SoundEvents.ENTITY_PLAYER_HURT_ON_FIRE, SoundEvents.ENTITY_PLAYER_HURT_DROWN,SoundEvents.ENTITY_PLAYER_HURT,SoundEvents.ENTITY_POLAR_BEAR_WARNING,SoundEvents.ENTITY_SPIDER_AMBIENT,SoundEvents.BLOCK_TRIPWIRE_CLICK_ON,SoundEvents.ENTITY_WITCH_AMBIENT,SoundEvents.ENTITY_WITCH_THROW,SoundEvents.ENTITY_WITHER_SKELETON_STEP,SoundEvents.ENTITY_WITHER_SKELETON_AMBIENT,SoundEvents.ENTITY_WITHER_SKELETON_HURT,SoundEvents.ENTITY_ITEM_BREAK,SoundEvents.ENTITY_ENDERMEN_STARE,SoundEvents.ENTITY_ENDERMEN_SCREAM,SoundEvents.ENTITY_ENDERMEN_TELEPORT};
+
 				
-				int r= (Util.rnd(sounds.length));
-				
-				if(Util.chance(90f))
-					player.world.playSound(player.posX, player.posY, player.posZ, sounds[r], SoundCategory.AMBIENT, Util.rndf(0.5f)+0.5f, 1, false);
+				if(Util.chance(80f))
+				{
+					if(Util.chance(50))
+						return;
+					
+					if(!Util.thisClientOnly(player))
+						return;
+
+					// collection of spooky sounds
+					SoundEvent[] sounds= new SoundEvent[] {SoundEvents.BLOCK_FIRE_AMBIENT, SoundEvents.ENTITY_ZOMBIE_AMBIENT, SoundEvents.ENTITY_ZOMBIE_ATTACK_DOOR_WOOD, SoundEvents.ENTITY_CREEPER_PRIMED, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundEvents.ENTITY_GHAST_SCREAM, SoundEvents.ENTITY_HOSTILE_BIG_FALL, SoundEvents.BLOCK_LAVA_POP, SoundEvents.ENTITY_PLAYER_HURT_ON_FIRE, SoundEvents.ENTITY_PLAYER_HURT_DROWN,SoundEvents.ENTITY_PLAYER_HURT,SoundEvents.ENTITY_POLAR_BEAR_WARNING,SoundEvents.ENTITY_SPIDER_AMBIENT,SoundEvents.BLOCK_TRIPWIRE_CLICK_ON,SoundEvents.ENTITY_WITCH_AMBIENT,SoundEvents.ENTITY_WITCH_THROW,SoundEvents.ENTITY_WITHER_SKELETON_STEP,SoundEvents.ENTITY_WITHER_SKELETON_AMBIENT,SoundEvents.ENTITY_WITHER_SKELETON_HURT,SoundEvents.ENTITY_ITEM_BREAK,SoundEvents.ENTITY_ENDERMEN_STARE,SoundEvents.ENTITY_ENDERMEN_SCREAM,SoundEvents.ENTITY_ENDERMEN_TELEPORT};
+					
+					int r= (Util.rnd(sounds.length));
+					player.world.playSound(player.posX, player.posY, player.posZ, sounds[r], SoundCategory.AMBIENT, Util.rndf(0.8f)+0.2f, 1, false);
+				}
 				else
 				if(Util.chance(50f) && record.getValue() < threshold / 2f)
 				{
-					new DamageStatEffect(LOW_SANITY_DAMAGE, 1, 10).apply(record, player);
+					if(!player.world.isRemote)
+					{
+						if(Util.chance(50))
+							player.addPotionEffect(new PotionEffect(MobEffects.BLINDNESS, Util.rnd(5*20,30*20), Util.rnd(255)));
+						else
+							player.attackEntityFrom(LOW_SANITY_DAMAGE, Util.rnd(1,8));
+					}
 				}
 				else
 				{
+					if(!Util.thisClientOnly(player))
+						return;
+
 					// 1F - current / threshold => this calculation is used to increase the volume for "more insane" players, up to 100% original volume (applied at sanity 0)
 					float volume = (1F - record.getValue() / threshold) * (float)ModConfig.SANITY.staticBuzzIntensity;
 					player.world.playSound(player.posX, player.posY, player.posZ, staticbuzz, SoundCategory.AMBIENT, volume, 1, false);
-					client.entityRenderer.loadShader(distortshader);
+//					if(Util.chance(10f))
+//						Minecraft.getMinecraft().entityRenderer.loadShader(distortshader);
 				}
 			}
 			else
 			{
-				// Check if the current shader is our shader, and if so, stop using it.
+/*				// Check if the current shader is our shader, and if so, stop using it.
 				ShaderGroup shader = client.entityRenderer.getShaderGroup();
-				if(shader != null && shader.getShaderGroupName().equals(distortshader.toString()))
+				if(player.world.getTotalWorldTime() % 100 == 0 && shader != null && shader.getShaderGroupName().equals(distortshader.toString()))
 				{
 					client.entityRenderer.stopUseShader();
 				}
+*/			}
+		}
+/*		else
+		{
+			Minecraft client = Minecraft.getMinecraft();
+			ShaderGroup shader = client.entityRenderer.getShaderGroup();
+			if(player.world.getTotalWorldTime() % 100 == 0 && shader != null && shader.getShaderGroupName().equals(distortshader.toString()))
+			{
+				client.entityRenderer.stopUseShader();
 			}
 		}
+*/			
 	}
 	
 	
+	// TODO Move
 	@SubscribeEvent
 	@SideOnly(Side.CLIENT)
 	public static void onClientWorldTick(TickEvent.PlayerTickEvent event)
@@ -249,7 +275,7 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 		if(SanityDebugCommand.enabled)
 		{
 			// Sends debug information to the player each second about absolute sanity and sanity tendency 
-			if(event.player.world.getWorldTime() % 20 == 0 && event.phase == Phase.START)
+			if(event.player.world.getWorldTime() % 40 == 0 && event.phase == Phase.START)
 			{
 				SimpleStatRecord sanityTendency = tracker.getRecord(SanityTendencyModifier.instance);
 	
@@ -261,14 +287,35 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 		}
 		
 		
+		if(LightDebugCommand.enabled)
+		{
+			// Sends debug information to the player each second about absolute sanity and sanity tendency 
+			if(event.player.world.getWorldTime() % 40 == 0 && event.phase == Phase.START)
+			{
+				BlockPos position = new BlockPos(event.player.getPositionVector().add(0D, event.player.getEyeHeight(), 0D));
+				int lightlevel = event.player.world.getLight(position);
+
+				event.player.sendMessage(new TextComponentString("Light level: "+lightlevel));
+
+			}
+		}
+		
+/*		
 		Minecraft client = Minecraft.getMinecraft();
 		ShaderGroup shader = client.entityRenderer.getShaderGroup();
-		if(shader != null && event.player.world.getWorldTime() % 160 == 0 && shader.getShaderGroupName().equals(distortshader.toString()) && !tracker.isActive(SanityModifier.instance, null))
+		if(shader != null && event.player.world.getWorldTime() % 160 == 0 && shader.getShaderGroupName().equals(distortshader.toString())  && !tracker.isActive(SanityModifier.instance, null))
 		{
 			client.entityRenderer.stopUseShader();
 		}
-		else
-			lowSanityConsequences(sanity, event.player);
+*/
+	}
+	
+	
+	public void set(float value, EntityPlayer player)
+	{
+		StatTracker tracker = player.getCapability(StatCapability.target, null);
+		SimpleStatRecord sanity = tracker.getRecord(SanityModifier.instance);
+		sanity.setValue(value);
 	}
 	
 	@SubscribeEvent
