@@ -62,6 +62,7 @@ public class BlockHeater extends Block implements ITileEntityProvider
 	    setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, (burning ? "lit_" : "") +"heater"));
 	    this.isBurning= burning;
 //	    ModelLoader.setCustomModelResourceLocation(Item.getItemFromBlock(this), 0, new ModelResourceLocation(getRegistryName(), "inventory"));
+	    this.setHardness(3.5f);
 	}
 	
 /*	@SideOnly(Side.CLIENT)
@@ -99,7 +100,6 @@ public class BlockHeater extends Block implements ITileEntityProvider
 	}
 	
 	   @SideOnly(Side.CLIENT)
-	    @SuppressWarnings("incomplete-switch")
 	    public void randomDisplayTick(IBlockState stateIn, World worldIn, BlockPos pos, Random rand)
 	    {
 	        if (this.isBurning)
