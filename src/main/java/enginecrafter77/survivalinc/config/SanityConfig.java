@@ -67,8 +67,8 @@ public class SanityConfig {
 	public double mobKill= 0.02;
 
 	@Config.LangKey("config.survivalinc:sanity.sleepRestoration")
-	@Config.RangeDouble(min = 0, max = 1)
-	public double sleepResoration = 0.3;
+	@Config.RangeDouble(min = 0)
+	public double sleepRestoration = 0.005;
 	
 	@Config.LangKey("config.survivalinc:sanity.hallucinationThreshold")
 	@Config.RangeDouble(min = 0, max = 1)
