@@ -3,11 +3,15 @@ package enginecrafter77.survivalinc;
 import enginecrafter77.survivalinc.block.BlockMelting;
 import enginecrafter77.survivalinc.client.GuiHandler;
 import enginecrafter77.survivalinc.config.ModConfig;
+import enginecrafter77.survivalinc.debug.LightDebugCommand;
 import enginecrafter77.survivalinc.debug.SanityDebugCommand;
 import enginecrafter77.survivalinc.ghost.GhostCommand;
 import enginecrafter77.survivalinc.ghost.GhostProvider;
+import enginecrafter77.survivalinc.net.DebugToggleMessage;
+import enginecrafter77.survivalinc.net.DebugToggleUpdater;
 import enginecrafter77.survivalinc.net.EntityItemUpdateMessage;
 import enginecrafter77.survivalinc.net.EntityItemUpdater;
+import enginecrafter77.survivalinc.net.SanityReasonMessage;
 import enginecrafter77.survivalinc.net.StatSyncMessage;
 import enginecrafter77.survivalinc.net.StatSyncHandler;
 import enginecrafter77.survivalinc.net.WaterDrinkMessage;
@@ -25,13 +29,18 @@ import enginecrafter77.survivalinc.stats.impl.HydrationModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.stats.impl.WetnessModifier;
+import enginecrafter77.survivalinc.strugglecraft.AddTendencyCommand;
+import enginecrafter77.survivalinc.strugglecraft.BiomeDecoratorDrugs;
 import enginecrafter77.survivalinc.strugglecraft.DeathCounter;
 import enginecrafter77.survivalinc.strugglecraft.DeathsCommand;
+import enginecrafter77.survivalinc.strugglecraft.DebugTraitsCommand;
 import enginecrafter77.survivalinc.strugglecraft.DrugModule;
+import enginecrafter77.survivalinc.strugglecraft.DrugsCommand;
 import enginecrafter77.survivalinc.strugglecraft.FavouriteFoodCommand;
 import enginecrafter77.survivalinc.strugglecraft.Tweaks;
 import enginecrafter77.survivalinc.strugglecraft.FoodModule;
 import enginecrafter77.survivalinc.strugglecraft.HateFoodCommand;
+import enginecrafter77.survivalinc.strugglecraft.SetSanityCommand;
 import enginecrafter77.survivalinc.strugglecraft.TraitModule;
 import enginecrafter77.survivalinc.strugglecraft.TraitsCommand;
 import net.minecraft.command.CommandHandler;
@@ -66,6 +75,8 @@ public class CommonProxy {
 		CapabilityManager.INSTANCE.register(StatTracker.class, StatStorage.instance, StatRegisterDispatcher.instance);
 		
 		MinecraftForge.EVENT_BUS.register(new DeathCounter());
+		
+		MinecraftForge.TERRAIN_GEN_BUS.register(new BiomeDecoratorDrugs());
 	}
 
 	public void init(FMLInitializationEvent event)
@@ -76,6 +87,10 @@ public class CommonProxy {
 		this.net.registerMessage(EntityItemUpdater.class, EntityItemUpdateMessage.class, 2, Side.CLIENT);
 		//this.net.registerMessage(GhostUpdateMessageHandler.class, GhostUpdateMessage.class, 3, Side.CLIENT);
 		this.net.registerMessage(HydrationModifier.class, WaterDrinkMessage.class, 3, Side.SERVER);
+
+		
+		this.net.registerMessage(DebugToggleUpdater.class, DebugToggleMessage.class, 4, Side.CLIENT);
+		this.net.registerMessage(SanityTendencyModifier.class, SanityReasonMessage.class, 5, Side.CLIENT);
 		
 		if(ModConfig.HEAT.enabled) HeatModifier.instance.init();
 		if(ModConfig.HYDRATION.enabled) HydrationModifier.instance.init();
@@ -120,7 +135,18 @@ public class CommonProxy {
 		if(ModConfig.TRAITS.enabled) manager.registerCommand(new DeathsCommand());
 		if(ModConfig.FOOD.enabled) manager.registerCommand(new FavouriteFoodCommand());
 		if(ModConfig.FOOD.enabled) manager.registerCommand(new HateFoodCommand());
-		
+		if(ModConfig.DEBUG.sanity) manager.registerCommand(new AddTendencyCommand());
+		if(ModConfig.DEBUG.sanity) manager.registerCommand(new SetSanityCommand());
+		if(ModConfig.DEBUG.traits) manager.registerCommand(new DebugTraitsCommand());
+		manager.registerCommand(new LightDebugCommand());
+		if(ModConfig.DRUGS.enabled) manager.registerCommand(new DrugsCommand());
+			
 		manager.registerCommand(new StatCommand());
 	}
+	
+	public void AddReasonToClient(float value, String reason, boolean forceAdd)
+	{
+		
+	}
+	
 }
