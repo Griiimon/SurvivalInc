@@ -31,6 +31,9 @@ public class Util {
 		return (int)Math.floor(Math.random()*(max-min)+min);
 	}
 
+	public static float rnd(float min, float max) {
+		return (float)(Math.random()*(max-min)+min);
+	}
 	
 	public static float rndf(float r)
 	{
@@ -49,10 +52,11 @@ public class Util {
 	
 	public static boolean thisClientOnly(EntityPlayer player)
 	{
+		if(!player.world.isRemote)
+			return false;
 		Minecraft client = Minecraft.getMinecraft();
 		if(player == client.player) 
 			return true;
 		return false;
 	}
-
 }
