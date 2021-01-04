@@ -17,6 +17,7 @@ public class SanityRecord extends SimpleStatRecord {
 		super();
 	
 		this.setValueRange(SanityRecord.values);
+		setValue(0);
 		this.ticksAwake = 0;
 		
 	}
@@ -30,6 +31,7 @@ public class SanityRecord extends SimpleStatRecord {
 	{
 		return this.ticksAwake;
 	}
+	
 
 	@Override
 	public NBTTagCompound serializeNBT()
