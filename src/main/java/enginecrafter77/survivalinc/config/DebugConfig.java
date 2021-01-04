@@ -8,5 +8,9 @@ public class DebugConfig {
 	@Config.LangKey("config.survivalinc:debug.traits")
 	@Config.RequiresMcRestart
 	public boolean traits= true;
-	
+
+	@Config.LangKey("config.survivalinc:debug.sanity")
+	@Config.RequiresMcRestart
+	public boolean sanity= true;
+
 }
