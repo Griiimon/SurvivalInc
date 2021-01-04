@@ -120,19 +120,19 @@ public class FoodModule implements StatProvider<FoodRecord> {
 				foodTable.put(id, annoyedOffset);
 				
 				// increase sanity boost with each new food tasted, but not linear
-				SanityTendencyModifier.instance.addToTendencyOneTime((float)Math.sqrt(foodTable.values().size())*2f, "New food", player);
+				SanityTendencyModifier.instance.addToTendencyServer((float)Math.sqrt(foodTable.values().size())*2f, "New food", player);
 			}
 			else
 			if(id == record.getFavoriteFoodId())
 			{
 				if(!TraitModule.instance.HasTrait(player,TRAITS.TASTELESS))
-					SanityTendencyModifier.instance.addToTendencyOneTime((float)ModConfig.FOOD.favFoodSanity, "Favourite food", player);
+					SanityTendencyModifier.instance.addToTendencyServer((float)ModConfig.FOOD.favFoodSanity, "Favourite food", player);
 			}
 			else
 			if(foodSanityMap.containsKey(food))
 			{
 				if(!TraitModule.instance.HasTrait(player,TRAITS.TASTELESS))
-					SanityTendencyModifier.instance.addToTendencyOneTime(foodSanityMap.get(food), "food", player);
+					SanityTendencyModifier.instance.addToTendencyServer(foodSanityMap.get(food), "food", player);
 			}
 			else	// annoyance level only for foods not listed in sanity map / current favorite food
 			if(Util.chance((float)ModConfig.FOOD.increaseLevelChance))
@@ -164,8 +164,8 @@ public class FoodModule implements StatProvider<FoodRecord> {
 				}
 			}
 		}
-		else
-			player.sendMessage(new TextComponentString("This isn't food"));
+//		else
+//			player.sendMessage(new TextComponentString("This isn't food"));
 	}
 	
 	
