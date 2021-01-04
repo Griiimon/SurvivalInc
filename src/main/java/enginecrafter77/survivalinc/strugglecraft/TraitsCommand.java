@@ -37,4 +37,10 @@ public class TraitsCommand extends CommandBase{
 	public String getUsage(ICommandSender arg0) {
 		return "/traits";
 	}
+	
+	@Override
+	public boolean checkPermission(MinecraftServer server, ICommandSender sender) {
+	    return true;
+	}
+
 }

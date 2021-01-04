@@ -98,4 +98,10 @@ public class SeasonCommand extends CommandBase {
 		builder.append(String.format(formatting, number));
 		return builder.toString();
 	}
+	
+	@Override
+	public boolean checkPermission(MinecraftServer server, ICommandSender sender) {
+	    return true;
+	}
+
 }

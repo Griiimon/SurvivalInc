@@ -31,4 +31,10 @@ public class FavouriteFoodCommand extends CommandBase{
 	public String getUsage(ICommandSender arg0) {
 		return "/favfood";
 	}
+	
+	@Override
+	public boolean checkPermission(MinecraftServer server, ICommandSender sender) {
+	    return true;
+	}
+
 }

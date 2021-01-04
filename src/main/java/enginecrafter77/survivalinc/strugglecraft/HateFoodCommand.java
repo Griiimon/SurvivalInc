@@ -30,4 +30,10 @@ public class HateFoodCommand extends CommandBase{
 	public String getUsage(ICommandSender arg0) {
 		return "/hatefood";
 	}
+	
+	@Override
+	public boolean checkPermission(MinecraftServer server, ICommandSender sender) {
+	    return true;
+	}
+
 }

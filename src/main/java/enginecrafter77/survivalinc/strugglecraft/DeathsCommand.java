@@ -12,11 +12,7 @@ public class DeathsCommand extends CommandBase{
 
 	@Override
 	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-//		if(ModConfig.TRAITS.enabled)
-//		{
-//			sender.sendMessage(new TextComponentString("Deaths: "+TraitModule.instance.getDeaths((EntityPlayer)sender.getCommandSenderEntity())));
-			sender.sendMessage(new TextComponentString("Deaths: "+DeathCounter.getDeaths((EntityPlayer)sender.getCommandSenderEntity())));
-//		}
+		sender.sendMessage(new TextComponentString("Deaths: "+DeathCounter.getDeaths((EntityPlayer)sender.getCommandSenderEntity())));
 	}
 
 	@Override
@@ -27,5 +23,10 @@ public class DeathsCommand extends CommandBase{
 	@Override
 	public String getUsage(ICommandSender arg0) {
 		return "/deaths";
+	}
+	
+	@Override
+	public boolean checkPermission(MinecraftServer server, ICommandSender sender) {
+	    return true;
 	}
 }
