@@ -7,6 +7,8 @@ import java.util.UUID;
 
 import com.google.common.collect.Range;
 
+import enginecrafter77.survivalinc.ModBlocks;
+import enginecrafter77.survivalinc.ModItems;
 import enginecrafter77.survivalinc.SurvivalInc;
 import enginecrafter77.survivalinc.config.ModConfig;
 import enginecrafter77.survivalinc.stats.SimpleStatRecord;
@@ -65,26 +67,33 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 	{
 		MinecraftForge.EVENT_BUS.register(WetnessModifier.class);
 		
-		this.effects.add(new ValueStatEffect(ValueStatEffect.Operation.OFFSET, 0.01F)).addFilter(FunctionalEffectFilter.byPlayer((EntityPlayer player) -> player.world.isRainingAt(player.getPosition().up())));
+//		this.effects.add(new ValueStatEffect(ValueStatEffect.Operation.OFFSET, 0.01F)).addFilter(FunctionalEffectFilter.byPlayer((EntityPlayer player) -> player.world.isRainingAt(player.getPosition().up())));
 		this.effects.add(new ValueStatEffect(ValueStatEffect.Operation.OFFSET, -0.8F)).addFilter(FunctionalEffectFilter.byPlayer(EntityPlayer::isBurning));
 		this.effects.add(new ValueStatEffect(ValueStatEffect.Operation.OFFSET, -0.08F)).addFilter(HydrationModifier.isOutsideOverworld);
 		
 		this.effects.add(WetnessModifier::causeDripping).addFilter(SideEffectFilter.CLIENT);
-		this.effects.add(WetnessModifier::slowDown).addFilter(SideEffectFilter.SERVER);
+//		this.effects.add(WetnessModifier::slowDown).addFilter(SideEffectFilter.SERVER);
 		this.effects.add(WetnessModifier::scanSurroundings);
 		this.effects.add(WetnessModifier::naturalDrying);
 		this.effects.add(WetnessModifier::whenInWater);
+		this.effects.add(WetnessModifier::whenRaining);
+		
+		// TODO use list from heat
 		
 		this.humiditymap.put(Blocks.FIRE, -0.5F);
 		this.humiditymap.put(Blocks.LAVA, -1F);
 		this.humiditymap.put(Blocks.FLOWING_LAVA, -1F);
 		this.humiditymap.put(Blocks.LIT_FURNACE, -0.4F);
+		this.humiditymap.put(ModBlocks.LIT_HEATER.get(), -0.6F);
 		this.humiditymap.put(Blocks.MAGMA, -0.4F);
 	}
 	
 	@Override
 	public void update(EntityPlayer target, StatRecord record)
 	{
+		if(target.isDead)
+			return;
+		
 		SimpleStatRecord wetness = (SimpleStatRecord)record;
 		this.effects.apply(wetness, target);
 		wetness.checkoutValueChange();
@@ -167,10 +176,11 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 	{
 		WorldClient world = (WorldClient)player.world;
 		Random rng = world.rand;
-		for(int index = Math.round(4F * record.getNormalizedValue()); index > 0; index--)
-		{
+//		for(int index = Math.round(4F * record.getNormalizedValue()); index > 0; index--)
+//		{
+		if(Util.chance(record.getNormalizedValue() * 10))
 			world.spawnParticle(EnumParticleTypes.DRIP_WATER, player.posX + (rng.nextFloat() * 0.5 - 0.25), player.posY + (rng.nextFloat() * 1 + 0.25), player.posZ + (rng.nextFloat() * 0.5 - 0.25), player.motionX, -0.5, player.motionZ);
-		}
+//		}
 	}
 	
 	public static void whenInWater(SimpleStatRecord record, EntityPlayer player)
@@ -190,6 +200,18 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 			float rate = (float)ModConfig.WETNESS.passiveDryRate;
 			if(Util.isDaytime(player) && player.world.canBlockSeeSky(player.getPosition())) rate *= ModConfig.WETNESS.sunlightMultiplier;
 			record.addToValue(-rate);
+		}
+	}
+	
+	public static void whenRaining(SimpleStatRecord record, EntityPlayer player)
+	{
+		if(player.world.isRainingAt(player.getPosition().up()))
+		{
+			boolean mainHand= player.getHeldItemMainhand() != null && player.getHeldItemMainhand().getItem() == ModItems.UMBRELLA.getItem();
+			boolean offHand= player.getHeldItemOffhand() != null && player.getHeldItemOffhand().getItem() == ModItems.UMBRELLA.getItem();
+			
+			if(!mainHand)
+				record.addToValue(offHand ? 0.05f : 0.2f);
 		}
 	}
 	
