@@ -44,33 +44,33 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 	public static final int USAGE_FREQUENCY_CONTINUOUSLY= 10000;
 	
 	public enum TRAITS {
-		PETLOVER("Petlover", POS_TRAIT,70),
+		PETLOVER("Petlover", POS_TRAIT,70, USAGE_FREQUENCY_OFTEN),				// likes to be near pets
 		GREEN_THUMB("Green Thumb", POS_TRAIT,0),
 		STAR_CHILD("Star Child", POS_TRAIT,0),
 		COURAGEOUS("Courageous", POS_TRAIT,20,USAGE_FREQUENCY_OFTEN),			// less afraid of darkness
 		WARM("Warm", POS_TRAIT,50, USAGE_FREQUENCY_CONTINUOUSLY),				// lower freezing threshold
 		AQUAPHILE("Aquaphile", POS_TRAIT,70, USAGE_FREQUENCY_OFTEN),			// more comfortable in (cold) water
 		HARD_WORKING("Hard Working", POS_TRAIT,0),
-		DISCIPLINED("Disciplined", POS_TRAIT,0),								//aka professional junkie
+		DISCIPLINED("Disciplined", POS_TRAIT,50),								// less chance of drug dependency
 		RUNNER("Runner", POS_TRAIT,100, USAGE_FREQUENCY_CONTINUOUSLY),
 		MINER("Miner", POS_TRAIT,0),
 		HELIOPHILE("Heliophile", POS_TRAIT,50, USAGE_FREQUENCY_CONTINUOUSLY),	// loves sunshine		
-		WORKAHOLIC("Workaholic", POS_TRAIT,100, USAGE_FREQUENCY_CONTINUOUSLY),	// less sleep deprivation impact
+		WORKAHOLIC("Workaholic", POS_TRAIT,50, USAGE_FREQUENCY_OFTEN),			// mood boost from breaking blocks
 		NONDISCRIMINATORY("Nondiscriminatory", POS_TRAIT,100),					// food variety not as important
 		BLOODTHIRSTY("Bloodthirsty", POS_TRAIT,80),								// sanity boost from killing
 		VERSATILE("Versatile", POS_TRAIT,0), 			
 		AGGRESSIVE("Aggressive", POS_TRAIT,0),									// 40, but disabled cause aggressive potion effect may not have levels	
 		AMUSING("Amusing", POS_TRAIT,0),										// tells jokes to increase other players mood
 		CURIOUS("Curious", POS_TRAIT,0),
-		ECSTATIC("Ecstatic", POS_TRAIT,20, USAGE_FREQUENCY_OFTEN),				// less haste-push dampening
+		ECSTATIC("Ecstatic", POS_TRAIT,20, USAGE_FREQUENCY_CONTINUOUSLY),		// less haste-push dampening
 		DECADENT("Decadent", POS_TRAIT,0),
 		NOBLE("Noble", POS_TRAIT,0),	
 		DREAMER("Dreamer", POS_TRAIT,0),
 		QUICK("Quick", POS_TRAIT,0),
-		CHEERFUL("Cheerful", POS_TRAIT,0),
+		CHEERFUL("Cheerful", POS_TRAIT,0, USAGE_FREQUENCY_MODERATELY),			// TOO MUCH REWRITING/EXCEPTIONS chance to block sanity penalties (only one-timers)
 		EDUCATED("Educated", POS_TRAIT,0),
 		PATIENT("Patient", POS_TRAIT,0),	
-		MASOCHIST("Masochist", POS_TRAIT,70),
+		MASOCHIST("Masochist", POS_TRAIT,70),									// sanity from being hurt
 		HARD_SHELL("Hard shell", POS_TRAIT,50),									// less sanity loss from damage
 		HEALTHY("Healthy", POS_TRAIT, 0),
 		
@@ -80,11 +80,11 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 		EMOTIONAL("Emotional", NEUT_TRAIT,0),
 		NUDIST("Nudist", NEUT_TRAIT,0),	
 		EXPLOSIVE("Explosive", NEUT_TRAIT,0),
-		ACTIVE("Active", NEUT_TRAIT,0),
+		ACTIVE("Active", NEUT_TRAIT,50, USAGE_FREQUENCY_CONTINUOUSLY),			// more sanity from running, less from sleep
 		DEFENSIVE("Defensive", NEUT_TRAIT,0),
 		STUBBORN("Stubborn", NEUT_TRAIT,0),
 		TASTELESS("Tasteless", NEG_TRAIT,50),									// no sanity effects from food
-		ANIMAL_LOVER("Animal Lover", POS_TRAIT, 70, USAGE_FREQUENCY_CONTINUOUSLY),	// likes to be around but not to kill animals
+		ANIMAL_LOVER("Animal Lover", NEUT_TRAIT, 70, USAGE_FREQUENCY_VERY_OFTEN),// likes to be around but not to kill animals
 	
 		
 		
@@ -99,13 +99,14 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 		NERVOUS("Nervous", NEG_TRAIT,0),
 		IDIOTIC("Idiotic", NEG_TRAIT,0),
 		IMPULSIVE("Impulsive", NEG_TRAIT,0),
-		SLEEPY("Sleepy", NEG_TRAIT,100),										// sleep deprivation is more serious
+		SLEEPY("Sleepy", NEG_TRAIT,100),										// wants to sleep during night
 		PARANOID("Paranoid", NEG_TRAIT,0),
 		UNINSPIRED("Uninspired", NEG_TRAIT,0),
 		FRAGILE("Fragile", NEG_TRAIT,100),										// takes double damage
 		CRYBABY("Crybaby", NEG_TRAIT,0),
 		EASILY_ADDICTED("Addict", NEG_TRAIT,0),
 		BITTER("Bitter", NEG_TRAIT,0),
+		DEPRESSED("Depressed", NEG_TRAIT,80),
 		AFRAID_DARKNESS("Afraid", NEG_TRAIT,70),
 		AFRAID_MOBS("Coward", NEG_TRAIT,70),									// doesn't like to be around hostiles
 		UNDEAD("Undead", NEG_TRAIT,20);											// doesn't like sunshine, may catch fire
@@ -258,7 +259,7 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 	}
 */
 
-	public void AddRandomTraits(EntityPlayer player)
+	public void AddRandomTrait(EntityPlayer player, boolean dontStackPositive)
 	{
 		StatTracker tracker = player.getCapability(StatCapability.target, null);
 		ListIntRecord record= tracker.getRecord(TraitModule.instance);
@@ -316,7 +317,7 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 		if(i>2000)
 			return;
 		}	// chance + 5 per TRAITLEVEL | TODO lower probabilty to add neut/neg trait the longer player has lived ( sum of all trait tiers)
-		while((!HasTrait(record, t) && Util.chance(90)) || t.chance==0 /*|| (t.type == POS_TRAIT && Util.rnd(100)>=(t.chance+playerEntity.experienceLevel-5))*/ || (t.type == NEUT_TRAIT && (Util.chance(100-t.chance) || Util.chance(DeathCounter.getDeaths(player)*3))));
+		while((!HasTrait(record, t) && Util.chance(50)) || t.chance==0 /*|| (t.type == POS_TRAIT && Util.rnd(100)>=(t.chance+playerEntity.experienceLevel-5))*/ || (t.type == NEUT_TRAIT && (Util.chance(100-t.chance) || Util.chance(DeathCounter.getDeaths(player)*3))) || (dontStackPositive && t.type == POS_TRAIT && HasTrait(record,t)));
 
 		int numNegTraits=0;
 		
@@ -419,7 +420,7 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 	}
 */	
 //	public void AddRandomSpawnTrait(ListIntRecord record)
-	public void AddRandomSpawnTrait(EntityPlayer player)
+/*	public void AddRandomSpawnTrait(EntityPlayer player)
 	{
 		StatTracker tracker = player.getCapability(StatCapability.target, null);
 		ListIntRecord record= tracker.getRecord(TraitModule.instance);
@@ -457,7 +458,7 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 		
 		}
 	}
-	
+*/	
 	public void UsingTrait(EntityPlayer player, TRAITS t)
 	{
 		UsingTrait(player, t, 1f);
@@ -466,6 +467,12 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 	
 	public void UsingTrait(EntityPlayer player, TRAITS t, float factor)
 	{
+		if(player.world.isRemote)
+			return;
+		
+//		if(t.type == NEUT_TRAIT)
+//			return;
+		
 		if(ModConfig.DEBUG.traits && !HasTrait(player, t))
 		{
 			String str= "ERROR: Using "+t.toString();
@@ -514,7 +521,7 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 	
 	@Override
 	public void update(EntityPlayer target, StatRecord record) {
-		if(target.world.isRemote)
+		if(target.world.isRemote || target.isDead)
 			return;
 		
 		ListIntRecord trec= (ListIntRecord) record;
@@ -522,7 +529,7 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 		if(trec.getListSize() == 0)
 		{
 			for(int i= 0; i < 3; i++)
-				instance.AddRandomTraits(target);
+				instance.AddRandomTrait(target, true);
 		}
 	}
 
