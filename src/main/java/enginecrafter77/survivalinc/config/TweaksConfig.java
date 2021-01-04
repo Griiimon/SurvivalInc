@@ -28,8 +28,16 @@ public class TweaksConfig {
 		@Config.RangeDouble(min = 0)
 		public double swimExhaustion= 0.05;
 
+		@Config.LangKey("config.survivalinc:tweaks.sleepExhaustion")
+		@Config.RangeDouble(min = 0)
+		public double sleepExhaustion= 0.001;
+		
 		@Config.LangKey("config.survivalinc:tweaks.animalHealthMultiplier")
 		@Config.RangeDouble(min = 0)
 		public double animalHealthMultiplier= 6;
+		
+		@Config.LangKey("config.survivalinc:tweaks.enable")
+		@Config.RequiresMcRestart
+		public boolean enhancedFishing= true;
 
 }

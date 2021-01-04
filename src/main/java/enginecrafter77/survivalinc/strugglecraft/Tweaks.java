@@ -1,6 +1,6 @@
 package enginecrafter77.survivalinc.strugglecraft;
 
-import java.util.Random;
+
 import java.util.UUID;
 
 import enginecrafter77.survivalinc.SurvivalInc;
@@ -9,15 +9,28 @@ import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.util.Util;
 import net.minecraft.block.BlockTallGrass;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.multiplayer.WorldClient;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityTracker;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.projectile.EntityFishHook;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
 import net.minecraft.item.crafting.FurnaceRecipes;
 import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.Vec3d;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
@@ -49,26 +62,68 @@ public class Tweaks {
 	}
 
 	
-	
+	// conflict with scaling health mod?
 	@SubscribeEvent
 	public static void onSpawn(EntityJoinWorldEvent event)
 	{
-		if(event.getWorld().isRemote)
-			return;
+//		if(event.getWorld().isRemote)
+//			return;
 		
 		Entity ent= event.getEntity();
 
 		
-		if(ent instanceof EntityAnimal && !ent.isDead)
+		if(!event.getWorld().isRemote && ent instanceof EntityAnimal && !ent.isDead)
 		{
 //			System.out.println("Patching "+ent.getName()+" health");
 			EntityAnimal animal= (EntityAnimal) ent;
 			AttributeModifier attr= new AttributeModifier(UUID.fromString(maxHealthModifierUUID), maxHealthModifierName, ((EntityAnimal) ent).getHealth() * ModConfig.TWEAKS.animalHealthMultiplier, 0);
 			if(!animal.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).hasModifier(attr))
+			{
 				animal.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).applyModifier(attr);
+				animal.heal(100f);
+				animal.setHealth(animal.getMaxHealth());
+			}
 		}
-
+		
+		if(ModConfig.TWEAKS.enhancedFishing && ent instanceof EntityFishHook && !(ent instanceof MyFishHook))//ent.getClass().equals(EntityFishHook.class)) 
+		{
+            EntityPlayer player = ((EntityFishHook) ent).getAngler();
+            
+            if(!event.getWorld().isRemote)
+			{
+	            ItemStack stack = player.getHeldItem(EnumHand.MAIN_HAND);
+	            if (stack.getItem() != Items.FISHING_ROD) {
+	                stack = player.getHeldItem(EnumHand.OFF_HAND);
+	            }
+	            ent.setDead();
+	
+	            MyFishHook hook = new MyFishHook(event.getWorld(), player);
+	
+	            int speed = EnchantmentHelper.getFishingSpeedBonus(stack);
+	            if (speed > 0) {
+	                hook.setLureSpeed(speed);
+	            }
+	            int luck = EnchantmentHelper.getFishingLuckBonus(stack);
+	            if (luck > 0) {
+	                hook.setLuck(luck);
+	            }
+	            event.getWorld().spawnEntity(hook);
+			}
+            else
+            {
+	            MyFishHook hook = new MyFishHook(event.getWorld(), player, ent.posX, ent.posY, ent.posZ);
+	            EntityTracker.updateServerPosition(hook, ent.posX, ent.posY, ent.posZ);
+	   	        hook.setEntityId(ent.getEntityId());
+   	            hook.setUniqueId(ent.getUniqueID());
+	     
+	            ((WorldClient)event.getWorld()).addEntityToWorld(hook.getEntityId(), hook);
+            }
+            
+	            event.setCanceled(true);
+			
+        }
 	}
+
 	
 	@SubscribeEvent
 	public static void onBlockStartBreak(PlayerEvent.BreakSpeed event){
@@ -84,6 +139,10 @@ public class Tweaks {
 //		event.player.world.getTotalWorldTime()
 		
 		EntityPlayer player= event.player;
+		
+		if(player.isPlayerSleeping())
+			player.getFoodStats().addExhaustion((float)ModConfig.TWEAKS.sleepExhaustion);
+		
 		if(player.isSprinting())
 			player.getFoodStats().addExhaustion((float)ModConfig.TWEAKS.runExhaustion);
 		
@@ -152,7 +211,6 @@ public class Tweaks {
 	}
 	 
 	
-	
 	public static void postInit()
 	{
 		//reduce Tool durability
@@ -174,6 +232,8 @@ public class Tweaks {
             
             x.setMaxDamage(newDamage);
         });
+		
+		
 		
 	}
 
