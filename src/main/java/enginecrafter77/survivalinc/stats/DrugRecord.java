@@ -23,6 +23,7 @@ public class DrugRecord implements StatRecord{
 	{
 		int numDrugs= Drug.drugList.size();
 
+		System.out.println("DEBUG: creating DrugRecord with size "+numDrugs);
 		
 		high= new int[numDrugs];
 		dependencyLevel= new int[numDrugs];

@@ -55,6 +55,9 @@ public class ItemDrug extends Item{
 
     protected void onFoodEaten(ItemStack stack, World worldIn, EntityPlayer player)
     {
+    	// TODO ?
+    	if(worldIn.isRemote)
+    		return;
     	drug.take(player);
     }
 

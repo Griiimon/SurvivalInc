@@ -1,0 +1,12 @@
+{
+    "variants": {
+        "age=0": { "model": "survivalinc:coca_stage0" },
+        "age=1": { "model": "survivalinc:coca_stage1" },
+        "age=2": { "model": "survivalinc:coca_stage2" },
+        "age=3": { "model": "survivalinc:coca_stage3" },
+        "age=4": { "model": "survivalinc:coca_stage4" },
+        "age=5": { "model": "survivalinc:coca_stage5" },
+        "age=6": { "model": "survivalinc:coca_stage6" },
+        "age=7": { "model": "survivalinc:coca_stage7" }
+    }
+}

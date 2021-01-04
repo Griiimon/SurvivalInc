@@ -1,0 +1,6 @@
+{
+    "parent": "block/crop",
+    "textures": {
+        "crop": "survivalinc:blocks/coca_stage_2"
+    }
+}

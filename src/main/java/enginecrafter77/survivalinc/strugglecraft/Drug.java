@@ -10,12 +10,13 @@ import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 
 public class Drug {
-
-	
-	public static Drug JOINT= new Drug("Joint", new DrugEffect[] {new DrugEffect(MobEffects.SLOWNESS, 50, 60,120,0,3), new DrugEffect(MobEffects.WEAKNESS, 50, 60,120,0,3)}, 1f, 2, 60);
-	
-	
 	public static ArrayList<Drug> drugList= new ArrayList<Drug>();
+	
+	public static Drug JOINT= new Drug("Joint", new DrugEffect[] {new DrugEffect(MobEffects.SLOWNESS, 50, 60,120,0,3), new DrugEffect(MobEffects.WEAKNESS, 50, 60,120,0,3), new DrugEffect(MobEffects.MINING_FATIGUE, 50, 60,120,0,2), new DrugEffect(MobEffects.HUNGER, 30, 20,60,0,2)}, 5f, 2, 60);
+	public static Drug CIGARETTE= new Drug("Cigarette", null, 1f, 20, 20);
+	public static Drug COCA_LEAVES= new Drug("Coca Leaves", new DrugEffect[] {new DrugEffect(MobEffects.HEALTH_BOOST, 30, 60,120,0,1), new DrugEffect(MobEffects.SATURATION, 100, 90,180,0,2), new DrugEffect(MobEffects.HASTE, 30, 60,120,0,1)}, 1f, 5, 30);
+	public static Drug OPIUM_PIPE= new Drug("Pipe", new DrugEffect[] {new DrugEffect(MobEffects.SLOWNESS, 90, 60,180,1,4), new DrugEffect(MobEffects.WEAKNESS, 90, 60,180,1,4), new DrugEffect(MobEffects.MINING_FATIGUE, 90, 60,180,1,4)}, 15f, 30, 180);
+	
 	
 	static class DrugEffect
 	{
@@ -55,14 +56,15 @@ public class Drug {
 	
 	public void take(EntityPlayer player)
 	{
-		SanityTendencyModifier.instance.addToTendencyOneTime(satisfaction, name, player);
-
-		for(DrugEffect effect : sideEffects)
+		if(sideEffects != null)
 		{
-			
-			if(Util.chance(effect.chance))
+			for(DrugEffect effect : sideEffects)
 			{
-				player.addPotionEffect(new PotionEffect(effect.potion, Util.rnd(effect.minDuration, effect.maxDuration), Util.rnd(effect.minAmplifier, effect.maxAmplifier)));
+				
+				if(Util.chance(effect.chance))
+				{
+					player.addPotionEffect(new PotionEffect(effect.potion, Util.rnd(effect.minDuration, effect.maxDuration), Util.rnd(effect.minAmplifier, effect.maxAmplifier)));
+				}
 			}
 		}
 		

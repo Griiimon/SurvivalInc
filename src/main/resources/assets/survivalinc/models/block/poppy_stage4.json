@@ -1,0 +1,6 @@
+{
+    "parent": "block/crop",
+    "textures": {
+        "crop": "survivalinc:blocks/poppy_stage_4"
+    }
+}
