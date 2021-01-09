@@ -3,11 +3,14 @@ package enginecrafter77.survivalinc.strugglecraft;
 
 import java.util.UUID;
 
+import enginecrafter77.survivalinc.ModItems;
 import enginecrafter77.survivalinc.SurvivalInc;
 import enginecrafter77.survivalinc.config.ModConfig;
+import enginecrafter77.survivalinc.season.Season;
 import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.util.Util;
 import net.minecraft.block.BlockTallGrass;
+import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -17,17 +20,21 @@ import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityTracker;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.passive.EntityAnimal;
+import net.minecraft.entity.passive.EntityWaterMob;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityFishHook;
 import net.minecraft.init.Items;
+import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
 import net.minecraft.item.crafting.FurnaceRecipes;
 import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -49,11 +56,9 @@ public class Tweaks {
 	public static String maxHealthModifierUUID = "2F28C409-EA90-4E54-AD57-13F3D92F68B2"; 
 	public static String maxHealthModifierName = SurvivalInc.MOD_ID+".MaxHealthModifier"; 
 
-
+	public static final PropertyEnum<BlockTallGrass.EnumType> GRASS_TYPE = PropertyEnum.<BlockTallGrass.EnumType>create("type", BlockTallGrass.EnumType.class);
 	
 	public static Tweaks instance= new Tweaks();
-	
-	Vec3d oldpos= null;
 	
 	
 	public void init()
@@ -72,11 +77,13 @@ public class Tweaks {
 		Entity ent= event.getEntity();
 
 		
-		if(!event.getWorld().isRemote && ent instanceof EntityAnimal && !ent.isDead)
+		if(!event.getWorld().isRemote && (ent instanceof EntityAnimal || ent instanceof EntityWaterMob) && !ent.isDead)
 		{
 //			System.out.println("Patching "+ent.getName()+" health");
-			EntityAnimal animal= (EntityAnimal) ent;
-			AttributeModifier attr= new AttributeModifier(UUID.fromString(maxHealthModifierUUID), maxHealthModifierName, ((EntityAnimal) ent).getHealth() * ModConfig.TWEAKS.animalHealthMultiplier, 0);
+//			EntityAnimal animal= (EntityAnimal) ent;
+			EntityLiving animal= (EntityLiving)ent;
+//			AttributeModifier attr= new AttributeModifier(UUID.fromString(maxHealthModifierUUID), maxHealthModifierName, ((EntityAnimal) ent).getHealth() * ModConfig.TWEAKS.animalHealthMultiplier, 0);
+			AttributeModifier attr= new AttributeModifier(UUID.fromString(maxHealthModifierUUID), maxHealthModifierName, 50f, 0);
 			if(!animal.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).hasModifier(attr))
 			{
 				animal.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).applyModifier(attr);
@@ -84,8 +91,9 @@ public class Tweaks {
 				animal.setHealth(animal.getMaxHealth());
 			}
 		}
-		
-		if(ModConfig.TWEAKS.enhancedFishing && ent instanceof EntityFishHook && !(ent instanceof MyFishHook))//ent.getClass().equals(EntityFishHook.class)) 
+
+		// uncomment only after clients have set enhancedFishing to false in cfg
+/*		if(ModConfig.TWEAKS.enhancedFishing && ent instanceof EntityFishHook && !(ent instanceof MyFishHook))//ent.getClass().equals(EntityFishHook.class)) 
 		{
             EntityPlayer player = ((EntityFishHook) ent).getAngler();
             
@@ -122,6 +130,8 @@ public class Tweaks {
 	            event.setCanceled(true);
 			
         }
+*/
+		
 	}
 
 	
@@ -131,9 +141,26 @@ public class Tweaks {
 	
 	}
 
-	
+	// TODO move to server, adding exhaustion has no effect client-side!?
 	@SubscribeEvent
 	public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+		
+		if(event.side == Side.SERVER)
+		{
+			if(Util.chance(event.player.world, 0.01f))
+			{
+				ItemStack headGear= event.player.getItemStackFromSlot(EntityEquipmentSlot.HEAD);
+				
+				if(headGear != null && (headGear.getItem() == ModItems.HEADBAND.getItem() || headGear.getItem() == ModItems.SUPERIOR_HEADBAND.getItem()))
+				{
+					headGear.damageItem(1, event.player);				
+				}
+			}
+
+			
+		}
+		
+		
 		if(event.side != Side.CLIENT) return;
 		
 //		event.player.world.getTotalWorldTime()
@@ -148,31 +175,18 @@ public class Tweaks {
 		
 		if(player.isHandActive())
 			player.getFoodStats().addExhaustion((float)ModConfig.TWEAKS.handExhaustion);
-		
-		if(player.isInWater())
-		{
-			Vec3d pos= player.getPositionVector();
-		
-			if(instance.oldpos != null)
-			{
-				Vec3d deltapos= pos.subtract(instance.oldpos);
-				// check for possible teleport/respawn position change etc..
-				if(deltapos.length() < 1)
-				{
-					// min threshold for position change to be considered moving/swimming
-					if(deltapos.length()> 0.01f)
-					{
-//						if(player.isPushedByWater())
-//							SanityTendencyModifier.instance.addToTendency(0.02f, "Sliding", player);
-//						else
-							//swimming
-							player.getFoodStats().addExhaustion((float)ModConfig.TWEAKS.swimExhaustion);
-					}
-				}
-			}
-			instance.oldpos= pos;
-		}
+
+		if(Util.isSwimming(player))
+			player.getFoodStats().addExhaustion((float)ModConfig.TWEAKS.swimExhaustion);
+
 	}
+
+	@SubscribeEvent
+	public static void onWorldTick(TickEvent.WorldTickEvent event) {
+		
+	
+	}
+
 	
 	@SubscribeEvent
 	public static void onJump(LivingJumpEvent event)
@@ -185,11 +199,20 @@ public class Tweaks {
 	@SubscribeEvent
 	public static void onCropGrowth(CropGrowEvent.Pre event)
 	{
-		if(Util.chance(90f))
+		float chance= 10f;
+		
+		if(event.getWorld().isRainingAt(event.getPos()))
+			chance+= 40f;
+
+		// sweet spot == 0
+		//		Math.abs(event.getWorld().getBiome(event.getPos()).getTemperature(event.getPos()) - 0.5f))
+		
+		
+		if(Util.chance(100-chance))
 			event.setResult(Result.DENY);
 	}
 	
-	// does this even has any effect?
+
 	@SubscribeEvent
 	public static void onDrop(HarvestDropsEvent event) {
 	    if (event.isSilkTouching()) {
@@ -204,9 +227,17 @@ public class Tweaks {
 	    }
 
 
-	    if (state.getBlock() instanceof BlockTallGrass) {
-	    	if(Util.chance(90f))
-	    		event.getDrops().clear();
+	    if (state.getBlock() instanceof BlockTallGrass) 
+    	{
+    		
+    		event.getDrops().clear();
+
+    		if (state.getValue(GRASS_TYPE) == BlockTallGrass.EnumType.FERN)
+        		event.getDrops().add(new ItemStack(Items.WHEAT_SEEDS));
+            else	 
+            if (state.getValue(GRASS_TYPE) == BlockTallGrass.EnumType.GRASS && Util.chance(3f))
+        		event.getDrops().add(new ItemStack(Items.WHEAT_SEEDS));
+    	
 	    }
 	}
 	 
