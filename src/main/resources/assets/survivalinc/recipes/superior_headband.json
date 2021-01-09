@@ -1,0 +1,43 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PCL",
+    "OSG"
+  ],
+  "key": {
+    "P": 
+	{
+      "item": "minecraft:dye",
+	  "data": 9
+    },
+    "O": 
+	{
+      "item": "minecraft:dye",
+	  "data": 14
+    },
+    "C": 
+	{
+      "item": "minecraft:dye",
+	  "data": 6
+    },
+    "L": 
+	{
+      "item": "minecraft:dye",
+	  "data": 10
+    },
+    "G": 
+	{
+      "item": "minecraft:dye",
+	  "data": 8
+    },
+    "S": 
+	{
+      "item": "minecraft:string",
+	  "data": 0
+    }
+
+  },
+  "result": {
+    "item": "survivalinc:superior_headband"
+  }
+}

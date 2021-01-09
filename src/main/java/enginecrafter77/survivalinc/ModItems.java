@@ -3,6 +3,9 @@ package enginecrafter77.survivalinc;
 import enginecrafter77.survivalinc.item.*;
 import enginecrafter77.survivalinc.ModBlocks;
 import enginecrafter77.survivalinc.strugglecraft.WoolArmor;
+import enginecrafter77.survivalinc.strugglecraft.StrawArmor;
+import enginecrafter77.survivalinc.strugglecraft.HeadbandArmor;
+import enginecrafter77.survivalinc.strugglecraft.RainArmor;
 import enginecrafter77.survivalinc.strugglecraft.ItemDrug;
 import enginecrafter77.survivalinc.strugglecraft.Drug;
 import enginecrafter77.survivalinc.strugglecraft.ItemDrugsSeed;
@@ -40,7 +43,13 @@ public enum ModItems {
 	OPIUM(new Item().setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, "opium")).setCreativeTab(SurvivalInc.mainTab), "opium"),
 	POPPY_SEEDS(new ItemDrugsSeed("poppy_seeds", ModBlocks.POPPY_CROP, OPIUM), "poppy_seeds"),
 	PIPE(new ItemDrug(Drug.OPIUM_PIPE), "pipe"),
-	UMBRELLA(new Item().setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, "umbrella")).setCreativeTab(SurvivalInc.mainTab), "umbrella");
+	UMBRELLA(new Item().setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, "umbrella")).setCreativeTab(SurvivalInc.mainTab), "umbrella"),
+	STRAW_HAT(new StrawArmor("straw_helmet", EntityEquipmentSlot.HEAD), "straw_helmet"),
+	HEADBAND(new HeadbandArmor("headband", EntityEquipmentSlot.HEAD, false), "headband"),
+	SUPERIOR_HEADBAND(new HeadbandArmor("superior_headband", EntityEquipmentSlot.HEAD, true), "superior_headband"),
+	RAIN_CAPE(new RainArmor("raincape", EntityEquipmentSlot.CHEST), "raincape")
+	;
+
 	
 	public final Item target;
 	public final String[] models;
