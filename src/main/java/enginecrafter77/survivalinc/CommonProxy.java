@@ -3,6 +3,7 @@ package enginecrafter77.survivalinc;
 import enginecrafter77.survivalinc.block.BlockMelting;
 import enginecrafter77.survivalinc.client.GuiHandler;
 import enginecrafter77.survivalinc.config.ModConfig;
+import enginecrafter77.survivalinc.debug.HeatDebugCommand;
 import enginecrafter77.survivalinc.debug.LightDebugCommand;
 import enginecrafter77.survivalinc.debug.SanityDebugCommand;
 import enginecrafter77.survivalinc.ghost.GhostCommand;
@@ -29,20 +30,7 @@ import enginecrafter77.survivalinc.stats.impl.HydrationModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.stats.impl.WetnessModifier;
-import enginecrafter77.survivalinc.strugglecraft.AddTendencyCommand;
-import enginecrafter77.survivalinc.strugglecraft.BiomeDecoratorDrugs;
-import enginecrafter77.survivalinc.strugglecraft.DeathCounter;
-import enginecrafter77.survivalinc.strugglecraft.DeathsCommand;
-import enginecrafter77.survivalinc.strugglecraft.DebugTraitsCommand;
-import enginecrafter77.survivalinc.strugglecraft.DrugModule;
-import enginecrafter77.survivalinc.strugglecraft.DrugsCommand;
-import enginecrafter77.survivalinc.strugglecraft.FavouriteFoodCommand;
-import enginecrafter77.survivalinc.strugglecraft.Tweaks;
-import enginecrafter77.survivalinc.strugglecraft.FoodModule;
-import enginecrafter77.survivalinc.strugglecraft.HateFoodCommand;
-import enginecrafter77.survivalinc.strugglecraft.SetSanityCommand;
-import enginecrafter77.survivalinc.strugglecraft.TraitModule;
-import enginecrafter77.survivalinc.strugglecraft.TraitsCommand;
+import enginecrafter77.survivalinc.strugglecraft.*;
 import net.minecraft.command.CommandHandler;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.MinecraftForge;
@@ -107,7 +95,7 @@ public class CommonProxy {
 		if(ModConfig.TWEAKS.enabled) Tweaks.instance.init();
 		if(ModConfig.DRUGS.enabled) DrugModule.instance.init();
 		
-		
+		if(ModConfig.AUTO_SHUTDOWN.enabled) AutoShutdown.init();
 		
 
 	}
@@ -135,11 +123,14 @@ public class CommonProxy {
 		if(ModConfig.TRAITS.enabled) manager.registerCommand(new DeathsCommand());
 		if(ModConfig.FOOD.enabled) manager.registerCommand(new FavouriteFoodCommand());
 		if(ModConfig.FOOD.enabled) manager.registerCommand(new HateFoodCommand());
+		if(ModConfig.FOOD.enabled) manager.registerCommand(new KnownFoodCommand());
 		if(ModConfig.DEBUG.sanity) manager.registerCommand(new AddTendencyCommand());
 		if(ModConfig.DEBUG.sanity) manager.registerCommand(new SetSanityCommand());
 		if(ModConfig.DEBUG.traits) manager.registerCommand(new DebugTraitsCommand());
 		manager.registerCommand(new LightDebugCommand());
+		manager.registerCommand(new HeatDebugCommand());
 		if(ModConfig.DRUGS.enabled) manager.registerCommand(new DrugsCommand());
+		manager.registerCommand(new WorshipCommand());
 			
 		manager.registerCommand(new StatCommand());
 	}
