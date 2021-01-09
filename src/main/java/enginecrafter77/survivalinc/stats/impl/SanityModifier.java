@@ -96,6 +96,10 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 	{
 		if(player.isCreative() || player.isSpectator() || player.isDead/*|| player.world.isRemote*/) return;
 		
+		
+		if(player.world.isRemote && !Util.thisClientOnly(player))
+			return;
+
 		StatTracker tracker = player.getCapability(StatCapability.target, null);
 		
 		if(tracker == null)
@@ -222,7 +226,7 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 					if(!player.world.isRemote)
 					{
 						if(Util.chance(50))
-							player.addPotionEffect(new PotionEffect(MobEffects.BLINDNESS, Util.rnd(5*20,30*20), Util.rnd(255)));
+							player.addPotionEffect(new PotionEffect(MobEffects.BLINDNESS, Util.rnd(15*20,45*20), Util.rnd(155)+100));
 						else
 							player.attackEntityFrom(LOW_SANITY_DAMAGE, Util.rnd(1,8));
 					}
