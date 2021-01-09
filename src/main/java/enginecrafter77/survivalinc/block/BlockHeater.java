@@ -71,11 +71,11 @@ public class BlockHeater extends Block implements ITileEntityProvider
 	}
 */	
 	
-/*   public Item getItemDropped(IBlockState state, Random rand, int fortune)
+   public Item getItemDropped(IBlockState state, Random rand, int fortune)
     {
         return Item.getItemFromBlock(ModBlocks.HEATER.get());
     }
-*/
+
 	
 	@Override
 	public TileEntity createNewTileEntity(World worldIn, int meta) {
@@ -134,22 +134,8 @@ public class BlockHeater extends Block implements ITileEntityProvider
 
 	    public static void setState(boolean active, World worldIn, BlockPos pos)
 	    {
-//	        IBlockState iblockstate = worldIn.getBlockState(pos);
 	        TileEntity tileentity = worldIn.getTileEntity(pos);
 
-/*	        if (active)
-	        {
-	            worldIn.setBlockState(pos, Blocks.LIT_FURNACE.getDefaultState().withProperty(FACING, iblockstate.getValue(FACING)), 3);
-	            worldIn.setBlockState(pos, Blocks.LIT_FURNACE.getDefaultState().withProperty(FACING, iblockstate.getValue(FACING)), 3);
-	        }
-	        else
-	        {
-	            worldIn.setBlockState(pos, Blocks.FURNACE.getDefaultState().withProperty(FACING, iblockstate.getValue(FACING)), 3);
-	            worldIn.setBlockState(pos, Blocks.FURNACE.getDefaultState().withProperty(FACING, iblockstate.getValue(FACING)), 3);
-	        }
-
-	        keepInventory = false;
-*/
 	        
 	        if(active)
 	        	worldIn.setBlockState(pos, ModBlocks.LIT_HEATER.get().getDefaultState());
