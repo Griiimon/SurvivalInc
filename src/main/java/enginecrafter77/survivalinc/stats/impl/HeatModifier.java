@@ -6,8 +6,9 @@ import java.util.Map;
 import com.google.common.collect.Range;
 
 import enginecrafter77.survivalinc.SurvivalInc;
-import enginecrafter77.survivalinc.client.StatFillBarHacked;
+import enginecrafter77.survivalinc.client.Thermometer;
 import enginecrafter77.survivalinc.config.ModConfig;
+import enginecrafter77.survivalinc.debug.HeatDebugCommand;
 import enginecrafter77.survivalinc.stats.StatProvider;
 import enginecrafter77.survivalinc.stats.StatRecord;
 import enginecrafter77.survivalinc.stats.StatRegisterEvent;
@@ -34,6 +35,7 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.biome.Biome;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -122,18 +124,27 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 	{
 		if(player.isCreative() || player.isSpectator() || player.isDead/* || player.world.isRemote*/) return;
 		
+		if(player.world.isRemote && !Util.thisClientOnly(player))
+			return;
+
+		
 		float target;
 
 		Biome biome = player.world.getBiome(player.getPosition());
 		target = biome.getTemperature(player.getPosition());
 
 		if(!Util.isDaytime(player))
-			target-= ModConfig.HEAT.nightTemperatureDrop;
-		
+		{
+			if(!biome.isHighHumidity() && !biome.canRain())	// deserts/mesas
+				target= 0f;
+			else
+				target-= ModConfig.HEAT.nightTemperatureDrop;
+		}
+			
 		if(player.isSprinting())
 			target+= ModConfig.HEAT.runningTemperatureIncrease;
 		
-		if(Util.isDaytime(player))
+		if(Util.isInSun(player))
 			target+= ModConfig.HEAT.sunWarmth;
 		
 		if(player.posY < player.world.getSeaLevel()) // Cave
@@ -142,6 +153,14 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 			float depthThreshold= 30f;
 			target = (float)Util.lerp(target, (float)ModConfig.HEAT.caveTemperature, (float)Math.min((player.world.getSeaLevel() - player.posY) / depthThreshold, 1f));   
 		}
+		else
+		if(player.posY > player.world.getSeaLevel() + 25) // Mountain
+		{
+			target-= (player.posY - (player.world.getSeaLevel() + 25))*0.01f; 
+		}
+			
+		if(player.isInWater())
+			target-=0.2f;
 
 		
 		if(target < -0.2F) target = -0.2F;
@@ -152,12 +171,21 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		
 		target = targettemp.apply(player, target * (float)ModConfig.HEAT.tempCoefficient);
 		
-		// TODO ...
-		if(Util.thisClientOnly(player))
-			StatFillBarHacked.value= Math.max(0f, Math.min(150, target))/150f;
-		
-		
+
 		SimpleStatRecord heat = (SimpleStatRecord)record;
+
+		if(Util.thisClientOnly(player))
+		{
+			Thermometer.value= Math.max(0f, Math.min(2f*(float)ModConfig.HEAT.tempCoefficient, target+0.2f*(float)ModConfig.HEAT.tempCoefficient))/(2f*(float)ModConfig.HEAT.tempCoefficient);
+		
+			if(HeatDebugCommand.enabled && player.world.getTotalWorldTime() % 40 == 0)
+			{
+				player.sendMessage(new TextComponentString("Target: "+target+" , Current: "+heat.getValue()));
+			}
+			
+		}
+			
+		
 		float difference = Math.abs(target - heat.getValue());
 		float rate = difference * (float)ModConfig.HEAT.heatExchangeFactor;
 		rate = this.exchangerate.apply(player, rate);
@@ -211,12 +239,12 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 			onHighTemperature(record, player);
 			if(Util.chance(1f))
 				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, 1f, 1, false);
-			SanityTendencyModifier.instance.addToTendency(-0.01f, "Very hot", player);
+//			SanityTendencyModifier.instance.addToTendency(-0.01f, "Very hot", player);
 		}
-		else
-		if(heat.getValue() > 90f)
+//		else
+		if(heat.getValue() > 80f)
 		{
-			SanityTendencyModifier.instance.addToTendency(-0.001f, "Hot", player);
+			SanityTendencyModifier.instance.addToTendency(-(heat.getValue() - 80f)*0.001f, "Hot", player);
 		}
 		
 		if(heat.getValue() > 45f && heat.getValue()<55f)
