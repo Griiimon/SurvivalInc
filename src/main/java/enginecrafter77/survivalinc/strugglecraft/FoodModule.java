@@ -98,7 +98,7 @@ public class FoodModule implements StatProvider<FoodRecord> {
 						offset-=2;
 					
 					if(value == ModConfig.FOOD.enoughThreshold - 1 + offset)
-						player.sendMessage(new TextComponentString(new ItemStack(Item.getItemById(record.getFavoriteFoodId())).getDisplayName()+ " is more acceptable"));
+						player.sendMessage(new TextComponentString(new ItemStack(Item.getItemById(randomKey)).getDisplayName()+ " is more acceptable"));
 				}
 			}
 			
@@ -120,7 +120,7 @@ public class FoodModule implements StatProvider<FoodRecord> {
 				foodTable.put(id, annoyedOffset);
 				
 				// increase sanity boost with each new food tasted, but not linear
-				SanityTendencyModifier.instance.addToTendencyServer((float)Math.sqrt(foodTable.values().size())*2f, "New food", player);
+				SanityTendencyModifier.instance.addToTendencyServer((float)Math.sqrt(foodTable.values().size())*5f, "New food", player);
 			}
 			else
 			if(id == record.getFavoriteFoodId())
