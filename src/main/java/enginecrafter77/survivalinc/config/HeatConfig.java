@@ -60,7 +60,11 @@ public class HeatConfig {
 	@Config.LangKey("config.survivalinc:heat.heaterFuelUsage")
 	@Config.RangeDouble(min = 0)
 	public double heaterFuelUsage=0.2;
-	
+
+	@Config.LangKey("config.survivalinc:heat.coolerFuelUsage")
+	@Config.RangeDouble(min = 0)
+	public double coolerFuelUsage=0.2;
+
 	@Config.LangKey("config.survivalinc:heat.blockHeatMap")
 	@Config.RequiresMcRestart
 	public String[] blockHeatMap = {
@@ -71,7 +75,8 @@ public class HeatConfig {
 			"minecraft:lit_furnace 150",
 			"minecraft:lit_pumpkin 80",
 			"survivalinc:lit_heater 150",
-			"campfire:campfire 100"
+			"campfire:campfire 100",
+			"survivalinc:active_cooler -150"
 	};
 	
 	@Config.LangKey("config.survivalinc:heat.armorMaterialConductivity")
