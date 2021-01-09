@@ -1,6 +1,8 @@
 package enginecrafter77.survivalinc.client;
 
+import enginecrafter77.survivalinc.block.ContainerCooler;
 import enginecrafter77.survivalinc.block.ContainerHeater;
+import enginecrafter77.survivalinc.block.TileEntityCooler;
 import enginecrafter77.survivalinc.block.TileEntityHeater;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
@@ -18,6 +20,12 @@ public class GuiHandler implements IGuiHandler {
         if (te instanceof TileEntityHeater) {
             return new ContainerHeater(player.inventory, (TileEntityHeater) te);
         }
+        else
+        if (te instanceof TileEntityCooler) {
+            return new ContainerCooler(player.inventory, (TileEntityCooler) te);
+        }
+        	
+        	
         return null;
     }
 
@@ -29,6 +37,11 @@ public class GuiHandler implements IGuiHandler {
             TileEntityHeater containerTileEntity = (TileEntityHeater) te;
             return new GuiHeater(containerTileEntity, new ContainerHeater(player.inventory, containerTileEntity));
         }
+        if (te instanceof TileEntityCooler) {
+            TileEntityCooler containerTileEntity = (TileEntityCooler) te;
+            return new GuiCooler(containerTileEntity, new ContainerCooler(player.inventory, containerTileEntity));
+        }
+
         return null;
     }
 }
