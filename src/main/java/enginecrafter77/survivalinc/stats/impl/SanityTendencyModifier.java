@@ -13,8 +13,13 @@ import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.passive.EntityTameable;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.MobEffects;
+import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.potion.Potion;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.management.PlayerList;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
@@ -55,6 +60,7 @@ import java.util.Queue;
 
 import com.google.common.collect.Range;
 
+import enginecrafter77.survivalinc.ModItems;
 import enginecrafter77.survivalinc.SurvivalInc;
 import enginecrafter77.survivalinc.config.ModConfig;
 import enginecrafter77.survivalinc.debug.LightDebugCommand;
@@ -73,8 +79,10 @@ import enginecrafter77.survivalinc.stats.effect.FunctionalEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.SideEffectFilter;
 import enginecrafter77.survivalinc.stats.effect.ValueStatEffect;
 import enginecrafter77.survivalinc.strugglecraft.DeathCounter;
+import enginecrafter77.survivalinc.strugglecraft.MyWorldSavedData;
 import enginecrafter77.survivalinc.strugglecraft.TraitModule;
 import enginecrafter77.survivalinc.strugglecraft.TraitModule.TRAITS;
+import enginecrafter77.survivalinc.strugglecraft.WorshipPlace;
 import enginecrafter77.survivalinc.util.Util;
 
 public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMessageHandler<SanityReasonMessage, IMessage> {
@@ -97,6 +105,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	
 	
 	String currentReasonStr= "";
+	boolean isCurrentReasonOneTimer= false;
 	int reasonTicks= 0;
 	int reasonFlipTicks= 60;
 
@@ -119,6 +128,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 		this.effects.add(SanityTendencyModifier::whenInSun);
 		this.effects.add(SanityTendencyModifier::whenInWater);
 		this.effects.add(SanityTendencyModifier::whenNight);
+		this.effects.add(SanityTendencyModifier::whenWearing);
 	
 	}
 	
@@ -238,12 +248,12 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 		if(value == 0f || reason == "" || serverSide)
 			return;
 
-		AddReason(value, reason, forceAddReason, oneTime);
+		addReason(value, reason, forceAddReason, oneTime);
 		
 	}
 	
 
-	public void AddReason(float value, String reason, boolean forceAddReason, boolean oneTime)
+	public void addReason(float value, String reason, boolean forceAddReason, boolean oneTime)
 	{
 		if(reasons.size() < 3 || forceAddReason)
 		{
@@ -258,16 +268,30 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 			
 			if(!alreadyUsed)
 			{
+//				if(oneTime)
+//					System.out.println("DEBUG: Adding reason "+reason);
 				if(oneTime)
-					System.out.println("DEBUG: Adding reason "+reason);
-				reasons.add(new ReasonEntry(reason, value, oneTime));
+				{
+					int i= 0;
+					while(i < reasons.size() && reasons.get(i).oneTime)
+						i++;
+					
+					reasons.add(i, new ReasonEntry(reason, value, oneTime));
+					
+					if(!isCurrentReasonOneTimer)
+						reasonTicks= reasonFlipTicks;
+
+				}
+				else
+					reasons.add(new ReasonEntry(reason, value, oneTime));
 				
-				if(oneTime)
+/*				if(oneTime)
 				{
 					System.out.println("DEBUG: new reason list");
 					for(ReasonEntry e : reasons)
 						System.out.println(e.toString());
 				}
+*/				
 			}
 		}
 	}
@@ -290,12 +314,16 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	{
 		if(target.isCreative() || target.isSpectator() || target.isDead/* || target.world.isRemote*/) return;
 		
+		if(target.world.isRemote && !Util.thisClientOnly(target))
+			return;
+		
 		SanityRecord sanity = (SanityRecord)record;
 		++sanity.ticksAwake;
 		this.effects.apply(sanity, target);
 	
 		// base sanity drain
-		addToTendency(-(target.world.getTotalWorldTime() / 24000) * 0.0001f, "", target);
+		if(!target.isPlayerSleeping())
+			addToTendency((float)(-Math.pow(target.world.getTotalWorldTime() / 24000, 0.85) * 0.0001), "", target);
 		
 		sanity.checkoutValueChange();
 		
@@ -332,6 +360,8 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 					postStr+= ""+c;
 
 				currentReasonStr+= " "+postStr;
+				
+				isCurrentReasonOneTimer= reasons.get(0).oneTime;
 				
 				reasons.remove(0);
 			}
@@ -426,13 +456,23 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	
 	public static void whenWet(SanityRecord record, EntityPlayer player)
 	{
+		if(!player.world.isRemote)
+			return;
+		
+		if(WetnessModifier.instance.outOfWaterDelay > 0)
+			return;
+		
 		float boundary = (float)ModConfig.SANITY.wetnessAnnoyanceThreshold;
 		StatTracker stats = player.getCapability(StatCapability.target, null);
 		SimpleStatRecord wetness = stats.getRecord(WetnessModifier.instance);		
 		if(wetness.getNormalizedValue() > boundary)
 		{
-			float temperatureFactor= Math.max(1f, 40f/Math.max(1f, HeatModifier.instance.getPlayerTemperature(player)));
-			instance.addToTendency(temperatureFactor*((wetness.getNormalizedValue() - boundary) / (1F - boundary)) * -(float)ModConfig.SANITY.maxWetnessAnnoyance, "Wet", record);
+			float playerTemp= HeatModifier.instance.getPlayerTemperature(player);
+			if(playerTemp < 60f)
+			{
+				float temperatureFactor= Math.max(1f, 40f/Math.max(1f, playerTemp));
+				instance.addToTendency(temperatureFactor*((wetness.getNormalizedValue() - boundary) / (1F - boundary)) * -(float)ModConfig.SANITY.maxWetnessAnnoyance, "Wet", record);
+			}
 		}
 	}
 	
@@ -472,7 +512,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	
 	public static void whenRunning(SanityRecord record, EntityPlayer player)
 	{
-		if(player.isSprinting())
+		if(player.isSprinting() && player.getActivePotionEffect(MobEffects.SLOWNESS) == null)
 		{
 			float factor= (float)ModConfig.SANITY.runningRelieve;
 			if(TraitModule.instance.HasTrait(player,TRAITS.RUNNER))
@@ -492,8 +532,9 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	
 	public static void whenInWater(SanityRecord record, EntityPlayer player)
 	{
-		if(player.isInWater())
-		{
+		
+		if(Util.isSwimming(player)/*player.isInWater()*/)
+		{			
 			StatTracker tracker = player.getCapability(StatCapability.target, null);
 			SimpleStatRecord heatRecord = tracker.getRecord(HeatModifier.instance);
 			
@@ -513,23 +554,20 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 			
 			if(heat < coldThreshold)
 			{
-				instance.addToTendency(-1f/heat, "Cold water", player);
+				instance.addToTendency(-1f/Math.max(1, heat), "Cold water", player);
 				if(isAquaphile)
 					TraitModule.instance.UsingTrait(player,TRAITS.AQUAPHILE, coldThreshold / Math.max(heat, 1));
 			}
 			else
 			if(heat > comfortableThreshold)
-				instance.addToTendency((float)((heat-60f) * ModConfig.SANITY.swimFun) , "Nice swim", player);
+				instance.addToTendency((float)((heat-comfortableThreshold) * ModConfig.SANITY.swimFun) , "Nice swim", player);
 		}
 	}
 	
 	public static void whenInSun(SanityRecord record, EntityPlayer player)
 	{
-		if(Util.isDaytime(player) && Util.isInSun(player) /* TODO && !Umbrella */)
+		if(Util.isInSun(player))
 		{
-			if(player.world.isRainingAt(player.getPosition()))
-				return;
-			
 			float factor= (float)ModConfig.SANITY.sunMoodBoost;
 			
 			if(TraitModule.instance.HasTrait(player,TRAITS.UNDEAD))
@@ -549,6 +587,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 			instance.addToTendency(factor, "Sun", record);
 		}
 	}
+
 	
 	public static void whenSleeping(SanityRecord record, EntityPlayer player)
 	{
@@ -576,6 +615,24 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 			
 		}
 	}
+
+	public static void whenWearing(SanityRecord record, EntityPlayer player)
+	{
+		if(player.isPlayerSleeping())
+			return;
+		
+		ItemStack head= player.getItemStackFromSlot(EntityEquipmentSlot.HEAD);
+		
+		if(head != null)
+		{
+			if(head.getItem() == ModItems.HEADBAND.getItem())
+				instance.addToTendency(0.0002f, "Headband", player);
+			else
+				if(head.getItem() == ModItems.SUPERIOR_HEADBAND.getItem())
+					instance.addToTendency(0.002f, "Headband", player);
+		}
+	}
+
 	
 	@SubscribeEvent
 	public static void onPlayerWakeUp(PlayerWakeUpEvent event)
@@ -648,7 +705,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 
 			if(TraitModule.instance.HasTrait(player,TRAITS.BLOODTHIRSTY))
 			{
-				instance.addToTendencyServer((TraitModule.instance.TraitTier(player,TRAITS.BLOODTHIRSTY) + 1 ) /10f, "killed something", player);				
+				instance.addToTendencyServer((TraitModule.instance.TraitTier(player,TRAITS.BLOODTHIRSTY) + 1 ) / 2f, "killed something", player);				
 				TraitModule.instance.UsingTrait(player,TRAITS.BLOODTHIRSTY);
 			}
 			
@@ -697,6 +754,51 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 				event.setAmount(event.getAmount()* (1f + (TraitModule.instance.TraitTier(player,TRAITS.FRAGILE) + 1)/2f));
 		}
 	}
+	
+	@SubscribeEvent
+	public static void onWorldTick(TickEvent.WorldTickEvent event)
+	{
+		if(event.side == Side.CLIENT)
+			return;
+		
+		if(event.phase == Phase.END)
+			return;
+		
+		if(Util.chance(event.world, 0.05f))  
+		{
+			 PlayerList players= event.world.getMinecraftServer().getPlayerList();
+
+			 List<EntityPlayerMP> playerList= new ArrayList<EntityPlayerMP>();
+			 List<EntityPlayerMP> removeList= new ArrayList<EntityPlayerMP>();
+			 
+			playerList.addAll(players.getPlayers());
+			 
+			System.out.println("DEBUG: Searching "+MyWorldSavedData.get(event.world).getWorshipPlaces().size()+" worship places");
+			 
+			for(WorshipPlace place : MyWorldSavedData.get(event.world).getWorshipPlaces())
+			{
+				for(EntityPlayerMP player : playerList)
+				{
+					if(player.isPlayerSleeping())
+						continue;
+					if(Util.distance(player.getPosition(), place.getPosition()) < place.getValue())
+					{
+						SanityTendencyModifier.instance.addToTendencyServer(5f, "Worship", player);
+						// remove player from any further worship checks
+						removeList.add(player);
+					}
+				}
+				
+				while(removeList.size()>0)
+				{
+					playerList.remove(removeList.get(0));
+					removeList.remove(0);
+				}
+				
+			}
+		}
+		
+	}
 
 	@Override
 	public IMessage onMessage(SanityReasonMessage message, MessageContext ctx) {
@@ -713,4 +815,6 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 		return null;
 	
 	}
+	
+	
 }
