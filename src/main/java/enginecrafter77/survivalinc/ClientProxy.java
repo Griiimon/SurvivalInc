@@ -5,7 +5,7 @@ import enginecrafter77.survivalinc.client.Direction2D;
 import enginecrafter77.survivalinc.client.ElementPositioner;
 import enginecrafter77.survivalinc.client.RenderHUD;
 import enginecrafter77.survivalinc.client.StatFillBar;
-import enginecrafter77.survivalinc.client.StatFillBarHacked;
+import enginecrafter77.survivalinc.client.Thermometer;
 import enginecrafter77.survivalinc.client.TextureResource;
 import enginecrafter77.survivalinc.client.TexturedColorElement;
 import enginecrafter77.survivalinc.client.TexturedElement;
@@ -58,7 +58,7 @@ public class ClientProxy extends CommonProxy {
 			RenderHUD.instance.addFilter(moveup, ElementType.ARMOR);
 			
 			// TODO ...
-			StatFillBarHacked<SimpleStatRecord> thermo = new StatFillBarHacked<SimpleStatRecord>(Direction2D.UP, new TexturedElement(thermometericon, 0, 0, 8, 32, true));
+			Thermometer<SimpleStatRecord> thermo = new Thermometer<SimpleStatRecord>(Direction2D.UP, new TexturedElement(thermometericon, 0, 0, 8, 32, true));
 			thermo.addOverlay(new TexturedElement(thermometericon, 8, 0, 8, 32, true));
 			thermo.setCapacity(1);
 			RenderHUD.instance.addIndependent(thermo, new ElementPositioner(0.5F, 1F, -100, -31));
@@ -108,7 +108,7 @@ public class ClientProxy extends CommonProxy {
 	@Override
 	public void AddReasonToClient(float value, String reason, boolean forceAdd)
 	{
-		SanityTendencyModifier.instance.AddReason(value, reason, forceAdd, true);
+		SanityTendencyModifier.instance.addReason(value, reason, forceAdd, true);
 	}
 
 }
