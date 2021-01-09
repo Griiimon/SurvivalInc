@@ -51,6 +51,9 @@ public class ModConfig {
 	@Config.Name("tweaks")
 	public static final TweaksConfig TWEAKS = new TweaksConfig();
 
+	@Config.Name("auto shutdown")
+	public static final AutoShutdownConfig AUTO_SHUTDOWN = new AutoShutdownConfig();
+
 	// This deals with changed the config values in Forge's GUI in-game.
 	// It also deals with syncing some config values from the server to the
 	// client, so everything doesn't get messed up.
