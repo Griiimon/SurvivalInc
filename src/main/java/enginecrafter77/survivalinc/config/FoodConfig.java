@@ -14,7 +14,7 @@ public class FoodConfig {
 
 		@Config.LangKey("config.survivalinc:food.favFoodSanity")
 		@Config.RangeDouble(min = 0)
-		public double favFoodSanity= 0.5;
+		public double favFoodSanity= 2;
 
 		@Config.LangKey("config.survivalinc:food.annoyedThreshold")
 		@Config.RangeInt(min = 0)
@@ -34,20 +34,26 @@ public class FoodConfig {
 
 		@Config.LangKey("config.survivalinc:food.sameFoodSanity")
 		@Config.RangeDouble(max = 0)
-		public double sameFoodSanity= -1;
+		public double sameFoodSanity= -2;
 
 		@Config.LangKey("config.survivalinc:food.foodSanityMap")
 		@Config.RequiresMcRestart
 		public String[] foodSanityMap = {
-		        "minecraft:rotten_flesh -5",
-		        "minecraft:spider_eye -5",
-		        "minecraft:poisonous_potato -5",
-		        "minecraft:pumpkin_pie 4",
-		        "minecraft:cake 5",
-		        "minecraft:cookie 2.5",
-		        "minecraft:melon 1.5",
-		        "minecraft:apple 1",
-		        "minecraft:golden_apple 5",
+		        "minecraft:rotten_flesh -10",
+		        "minecraft:spider_eye -10",
+		        "minecraft:poisonous_potato -10",
+		        "minecraft:pumpkin_pie 5",
+		        "minecraft:cake 10",
+		        "minecraft:cookie 5",
+		        "minecraft:melon 3",
+		        "minecraft:apple 2",
+		        "minecraft:golden_apple 10",
+		        "foodexpansion:itemchocolatebar 10",
+		        "foodexpansion:itemspidersoup -5",
+		        "foodexpansion:itemnetherwartsoup -5",
+		        "foodexpansion:itemcarrotpie 5",
+		        "foodexpansion:itemmelonsalad 3",
+		        "foodexpansion:itemlollipop 8"
 		};
 
 }
