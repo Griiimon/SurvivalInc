@@ -124,6 +124,11 @@ config.survivalinc:sanity.sleepDeprivationDebuff=Sleep Deficit Debuff
 config.survivalinc:sanity.sleepDeprivationDebuff.tooltip=The amount of sanity taken each tick after the maximum sleep deficit amount of ticks without sleep have been elapsed.
 config.survivalinc:sanity.startValue=Starting Value
 config.survivalinc:sanity.startValue.tooltip=The amount of sanity the player has upon spawn
+config.survivalinc:sanity.tendencyImpact=Momentum Impact
+config.survivalinc:sanity.tendencyImpact.tooltip=How fast the sanity changes
+config.survivalinc:sanity.runningRelieve=Running Relieve
+config.survivalinc:sanity.runningRelieve.tooltip=Sanity boost from running
+
 
 # Wetness config
 survivalinc.wetness=Wetness
