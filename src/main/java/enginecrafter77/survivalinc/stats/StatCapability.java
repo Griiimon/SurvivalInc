@@ -25,6 +25,8 @@ public class StatCapability implements ICapabilitySerializable<NBTBase> {
 	
 	@CapabilityInject(StatTracker.class)
 	public static final Capability<StatTracker> target = null;
+
+	public static boolean updateNextTick= false;
 	
 	private final StatTracker tracker;
 	
@@ -81,10 +83,11 @@ public class StatCapability implements ICapabilitySerializable<NBTBase> {
 		StatTracker stat = event.player.getCapability(StatCapability.target, null);
 		stat.update(event.player);
 		
-		if(event.side == Side.SERVER && event.player.world.getWorldTime() % ModConfig.GENERAL.serverSyncDelay == 0)
+		if(event.side == Side.SERVER && (updateNextTick || event.player.world.getWorldTime() % ModConfig.GENERAL.serverSyncDelay == 0))
 		{
 			// Send update to all players about the currently processed player's stats
 			SurvivalInc.proxy.net.sendToAll(new StatSyncMessage(event.player));
+			updateNextTick= false;
 		}
 	}
 }
