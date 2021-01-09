@@ -46,7 +46,10 @@ public class BlockDrugsCrop extends BlockCrops{
             if (i < this.getMaxAge())
             {
                 float f = getGrowthChance(this, worldIn, pos);
-
+                
+                if(worldIn.isRainingAt(pos))
+                	f*= 3;
+                
 //                if (rand.nextInt((int)(25.0F / f) + 1) == 0)
                	if (rand.nextInt((int)(100.0F / f) + 1) == 0)
                 {
