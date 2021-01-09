@@ -382,7 +382,7 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 				int newTier= record.get(i+1)+1;
 				record.set(i+1, newTier);
 				
-				player.sendMessage(new TextComponentString("Trait "+t.traitName+" Level Up => Level "+newTier));
+				player.sendMessage(new TextComponentString("Trait "+t.traitName+" Level Up"));// => Level "+newTier));
 				flag=true;
 			}
 		
@@ -491,33 +491,6 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 		
 	}
 	
-/*
-	@Override
-	public void deserializeNBT(NBTTagCompound nbt) {
-		int[]arr=  nbt.getIntArray("traits");
-		System.out.print(arr);
-		listTraits.clear();
-		int i= 0;
-		for(i= 0; i < arr.length / 2; i++)
-			listTraits.add(new TraitListEntry(TRAITS.values()[arr[i]], arr[i+arr.length/2]));
-		deathCtr= nbt.getInteger("deaths");
-	}
-
-	@Override
-	public NBTTagCompound serializeNBT() {
-		NBTTagCompound tag = new NBTTagCompound();
-		int[] arr= new int[listTraits.size() * 2];
-		int j= 0;
-		for(int i= 0; i < listTraits.size(); i++)
-			arr[j++]= listTraits.get(i).trait.id;
-		for(int i= 0; i < listTraits.size(); i++)
-			arr[j++]= listTraits.get(i).tier;
-		tag.setIntArray("traits", arr);
-		tag.setInteger("deaths", deathCtr);
-		return tag;
-
-	}
-*/
 	
 	@Override
 	public void update(EntityPlayer target, StatRecord record) {
