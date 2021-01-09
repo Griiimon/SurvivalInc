@@ -28,7 +28,7 @@ public class SanityConfig {
 	
 	@Config.LangKey("config.survivalinc:sanity.maxWetnessAnnoyance")
 	@Config.RangeDouble(min = 0, max = 100)
-	public double maxWetnessAnnoyance = 0.02D;
+	public double maxWetnessAnnoyance = 0.01D;
 	
 	@Config.LangKey("config.survivalinc:sanity.darkSpookFactorBase")
 	@Config.RangeDouble(min = 1E-4, max = 0.1)
@@ -64,7 +64,7 @@ public class SanityConfig {
 
 	@Config.LangKey("config.survivalinc:sanity.mobKill")
 	@Config.RangeDouble(min = 0)
-	public double mobKill= 0.02;
+	public double mobKill= 2;
 
 	@Config.LangKey("config.survivalinc:sanity.sleepRestoration")
 	@Config.RangeDouble(min = 0)
