@@ -1,7 +1,15 @@
 package enginecrafter77.survivalinc.util;
 
+import javax.vecmath.Point3d;
+
+import enginecrafter77.survivalinc.ModItems;
+import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 public class Util {
 
@@ -18,7 +26,44 @@ public class Util {
 
 	public static boolean isInSun(EntityPlayer player)
 	{
+		if(!isDaytime(player))
+			return false;
+		
+//		if(player.world.isRainingAt(player.getPosition()))
+		if(player.world.isRaining())
+			return false;
+		
+		
+		boolean mainHand= player.getHeldItemMainhand() != null && player.getHeldItemMainhand().getItem() == ModItems.UMBRELLA.getItem();
+		boolean offHand= player.getHeldItemOffhand() != null && player.getHeldItemOffhand().getItem() == ModItems.UMBRELLA.getItem();
+
+		if(mainHand || offHand)
+			return false;
+		
+		ItemStack hat= player.getItemStackFromSlot(EntityEquipmentSlot.HEAD);
+		
+		if(hat != null && hat.getItem() == ModItems.STRAW_HAT.getItem())
+			return false;
+		
+//		if(player.world.getLight(new BlockPos(player.getPositionVector().add(0D, player.getEyeHeight(), 0D))) < 13)
+//			return false;
+		
 		return player.world.canBlockSeeSky(player.getPosition());
+	}
+	
+	public static boolean isSwimming(EntityPlayer player)
+	{
+		if(player.motionX == 0 && player.motionZ == 0)
+			return false;
+		
+		// boat
+		if(player.isRiding())
+			return false;
+		
+		if(player.world.getBlockState(player.getPosition().down()).getMaterial() != Material.WATER)
+			return false;
+		
+		return player.isInWater();
 	}
 	
 	public static int rnd(int r)
@@ -45,9 +90,23 @@ public class Util {
 		return Math.random() * 100 < f;
 	}
 
+	public static boolean chance(World world, float f)
+	{
+		return world.rand.nextFloat() * 100 < f;
+	}
+
+	
 	public static boolean chanced(double d)
 	{
 		return Math.random() * 100 < d;
+	}
+	
+	public static double distance(BlockPos pos1, BlockPos pos2)
+	{
+		Point3d p1= new Point3d(pos1.getX(), pos1.getY(), pos1.getZ());
+		Point3d p2= new Point3d(pos2.getX(), pos2.getY(), pos2.getZ());
+		
+		return p1.distance(p2);
 	}
 	
 	public static boolean thisClientOnly(EntityPlayer player)
@@ -59,4 +118,5 @@ public class Util {
 			return true;
 		return false;
 	}
+	
 }
