@@ -32,7 +32,7 @@ public class WorldGeneratorDrugs extends WorldGenerator
         	
 	    	BlockDrugsCrop crops = arr[Util.rnd(arr.length)]; 
 	        
-	        for (int i = 0; i < 2; ++i)
+	        for (int i = 0; i < 7; ++i)
 	        {
 	            BlockPos blockpos = position.add(rand.nextInt(8) - rand.nextInt(8), rand.nextInt(4) - rand.nextInt(4), rand.nextInt(8) - rand.nextInt(8));
 	
