@@ -28,6 +28,8 @@ import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
@@ -55,7 +57,7 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 	public final EffectApplicator<SimpleStatRecord> effects;
 	public final UUID wetnessSlowdown;
 
-	int outOfWaterDelay= 0;
+	public int outOfWaterDelay= 0;
 	
 	public WetnessModifier()
 	{
@@ -78,7 +80,7 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 		this.effects.add(WetnessModifier::whenInWater);
 		this.effects.add(WetnessModifier::whenRaining);
 		
-		// TODO use list from heat
+		// TODO use list from heat, dont hardcode
 		
 		this.humiditymap.put(Blocks.FIRE, -0.5F);
 		this.humiditymap.put(Blocks.LAVA, -1F);
@@ -86,6 +88,11 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 		this.humiditymap.put(Blocks.LIT_FURNACE, -0.4F);
 		this.humiditymap.put(ModBlocks.LIT_HEATER.get(), -0.6F);
 		this.humiditymap.put(Blocks.MAGMA, -0.4F);
+		
+		Block campfire= Block.getBlockFromName("campfire:campfire");
+		if(campfire != null)
+			this.humiditymap.put(campfire, -0.4F);
+			
 	}
 	
 	@Override
@@ -93,6 +100,10 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 	{
 		if(target.isDead)
 			return;
+		
+		if(target.world.isRemote && !Util.thisClientOnly(target))
+			return;
+
 		
 		SimpleStatRecord wetness = (SimpleStatRecord)record;
 		this.effects.apply(wetness, target);
@@ -190,7 +201,15 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 			Material headBlockMaterial = player.world.getBlockState(new BlockPos(player).up()).getMaterial();
 			if(headBlockMaterial == Material.WATER) record.addToValue(5F);
 			else if(record.getNormalizedValue() < 0.4F) record.addToValue(1.25F);
+
+			instance.outOfWaterDelay= 20;
 		}
+		else
+		{
+			if(instance.outOfWaterDelay > 0)
+				instance.outOfWaterDelay--;
+		}
+
 	}
 	
 	public static void naturalDrying(SimpleStatRecord record, EntityPlayer player)
@@ -210,7 +229,11 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 			boolean mainHand= player.getHeldItemMainhand() != null && player.getHeldItemMainhand().getItem() == ModItems.UMBRELLA.getItem();
 			boolean offHand= player.getHeldItemOffhand() != null && player.getHeldItemOffhand().getItem() == ModItems.UMBRELLA.getItem();
 			
-			if(!mainHand)
+			ItemStack chestSlot= player.getItemStackFromSlot(EntityEquipmentSlot.CHEST);
+			
+			boolean cape= chestSlot != null && chestSlot.getItem() == ModItems.RAIN_CAPE.getItem();
+			
+			if(!mainHand && !cape)
 				record.addToValue(offHand ? 0.05f : 0.2f);
 		}
 	}
