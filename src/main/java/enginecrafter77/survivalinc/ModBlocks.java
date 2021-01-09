@@ -24,10 +24,15 @@ public enum ModBlocks implements Supplier<Block> {
 	MELTING_ICE(new BlockMeltingIce()),
 	HEATER(new BlockHeater(false)),
 	LIT_HEATER(new BlockHeater(true)),
+	COOLER(new BlockCooler(false)),
+	ACTIVE_COOLER(new BlockCooler(true)),
 	WEED_CROP(new BlockDrugsCrop("weed_crop")),
 	TOBACCO_CROP(new BlockDrugsCrop("tobacco_crop")),
 	COCA_CROP(new BlockDrugsCrop("coca_crop")),
-	POPPY_CROP(new BlockDrugsCrop("poppy_crop"));
+	POPPY_CROP(new BlockDrugsCrop("poppy_crop")),
+	MONOLITH(new BlockMonolith())
+	
+	;
 	
 	private final Block instance;
 	
@@ -49,7 +54,10 @@ public enum ModBlocks implements Supplier<Block> {
 		for(ModBlocks block : ModBlocks.values())
 			reg.register(block.instance);
 		
+		// TODO move to block.init
 		GameRegistry.registerTileEntity(TileEntityHeater.class, new ResourceLocation(SurvivalInc.MOD_ID, "heater"));
+		GameRegistry.registerTileEntity(TileEntityCooler.class, new ResourceLocation(SurvivalInc.MOD_ID, "cooler"));
+		GameRegistry.registerTileEntity(TileEntityMonolith.class, new ResourceLocation(SurvivalInc.MOD_ID, "monolith"));
 
 	}
 	
