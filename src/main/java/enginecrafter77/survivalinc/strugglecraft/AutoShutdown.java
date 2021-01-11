@@ -37,9 +37,9 @@ public class AutoShutdown {
 		{
 			int numPlayers= event.player.world.getMinecraftServer().getCurrentPlayerCount();
 
-			System.out.println("DEBUG: player logged out ("+numPlayers+" left)");
+			System.out.println("DEBUG: player logged out ("+(numPlayers-1)+" left)");
 			
-			if(numPlayers == 0)
+			if(numPlayers == 1)
 			{
 				System.out.println("Auto Shutdown countdown starting");
 				instance.shutdownCountdown= ModConfig.AUTO_SHUTDOWN.ticks;
@@ -59,7 +59,7 @@ public class AutoShutdown {
 		instance.shutdownCountdown= 0;
 	}
 
-	
+	@SubscribeEvent
 	public static void onTick(WorldTickEvent event)
 	{
 		if(instance.shutdownCountdown > 0)
