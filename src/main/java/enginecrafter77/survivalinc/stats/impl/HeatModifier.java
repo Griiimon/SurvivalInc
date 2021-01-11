@@ -167,7 +167,7 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		if(target > 1.5F) target = 1.5F;
 		
 		if(target < 0.4f && player.isPlayerSleeping())
-			target+= Math.min(0.4f - target, 0.2f);
+			target+= Math.min(0.4f - target, 0.1f);
 		
 		target = targettemp.apply(player, target * (float)ModConfig.HEAT.tempCoefficient);
 		
@@ -312,7 +312,7 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 	public static float applyBedInsulation(EntityPlayer player, float current)
 	{
 		if(player.isPlayerSleeping())
-			return current * 0.2f;
+			return current * 0.7f;
 		return current * 1f;
 	}
 	
@@ -357,7 +357,7 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 			if(HeatModifier.instance.blockHeatMap.containsKey(block))
 			{
 				float currentheat = HeatModifier.instance.blockHeatMap.get(block);
-				float proximity = (float)Math.sqrt(player.getPositionVector().squareDistanceTo(new Vec3d(position)));
+				float proximity = (float)Math.sqrt(player.getPositionVector().squareDistanceTo(new Vec3d(position).add(new Vec3d(0.5, 0.5, 0.5))));
 				currentheat *= (float)(ModConfig.HEAT.gaussScaling / (Math.pow(proximity, 2) + ModConfig.HEAT.gaussScaling));
 				if(currentheat > heat) heat = currentheat; // Use only the maximum value
 			}
