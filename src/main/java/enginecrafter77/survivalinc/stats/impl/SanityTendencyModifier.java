@@ -20,6 +20,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.PlayerList;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.tileentity.TileEntityMobSpawner;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
@@ -29,6 +31,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.common.MinecraftForge;
@@ -705,14 +708,14 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 
 			if(TraitModule.instance.HasTrait(player,TRAITS.BLOODTHIRSTY))
 			{
-				instance.addToTendencyServer((TraitModule.instance.TraitTier(player,TRAITS.BLOODTHIRSTY) + 1 ) / 2f, "killed something", player);				
+				instance.addToTendencyServer((TraitModule.instance.TraitTier(player,TRAITS.BLOODTHIRSTY) + 1 ) * 1.5f, "killed something", player);				
 				TraitModule.instance.UsingTrait(player,TRAITS.BLOODTHIRSTY);
 			}
 			
 			if(target instanceof EntityAnimal)
 			{
 				if(TraitModule.instance.HasTrait(player,TRAITS.ANIMAL_LOVER))
-					instance.addToTendencyServer(-1.5f, "Poor animal", player);
+					instance.addToTendencyServer(-1.5f * (TraitModule.instance.TraitTier(player,TRAITS.ANIMAL_LOVER) + 1), "Poor animal", player);
 			}
 		}
 	}
@@ -764,6 +767,8 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 		if(event.phase == Phase.END)
 			return;
 		
+		
+		// Check worship place proximity
 		if(Util.chance(event.world, 0.05f))  
 		{
 			 PlayerList players= event.world.getMinecraftServer().getPlayerList();
@@ -781,7 +786,8 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 				{
 					if(player.isPlayerSleeping())
 						continue;
-					if(Util.distance(player.getPosition(), place.getPosition()) < place.getValue())
+					
+					if(Util.distance(player, place.getPosition()) < place.getValue())
 					{
 						SanityTendencyModifier.instance.addToTendencyServer(5f, "Worship", player);
 						// remove player from any further worship checks
@@ -797,6 +803,40 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 				
 			}
 		}
+
+
+		// Check mob spawner proximity
+		if(Util.chance(event.world, 0.5f))
+		{
+			for(EntityPlayer player : event.world.getMinecraftServer().getPlayerList().getPlayers())
+			{
+				int cx= player.chunkCoordX;
+				int cz= player.chunkCoordZ;
+				
+				cx+= Util.rnd(event.world, -4, 4);
+				cz+= Util.rnd(event.world, -4, 4);
+				
+				Chunk chunk= event.world.getChunk(cx, cz);
+				
+				if(chunk == null || !chunk.isLoaded() || !chunk.isPopulated())
+					continue;
+				
+				for(Map.Entry<BlockPos,TileEntity> entry : chunk.getTileEntityMap().entrySet())
+				{
+					if(entry.getValue() instanceof TileEntityMobSpawner)
+					{
+						if(Util.distance(player, entry.getKey()) < 35)
+						{
+							SanityTendencyModifier.instance.addToTendencyServer(-10f, "Evil place", player);
+							break;
+						}
+					}
+				}
+				
+			}
+				
+		}
+
 		
 	}
 
