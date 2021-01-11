@@ -129,15 +129,15 @@ public class SanityModifier implements StatProvider<SimpleStatRecord> {
 				boolean isEcstatic= TraitModule.instance.HasTrait(player, TRAITS.ECSTATIC);
 				
 				// dampener
-				float factor= tendency.getValue()/10000f;
+				double factor= tendency.getValue()/10000d;
 				
 				if(isEcstatic)
 				{
-					factor/= (TraitModule.instance.TraitTier(player, TRAITS.ECSTATIC)+1f) * 2f;
+					factor/= 1 + (TraitModule.instance.TraitTier(player, TRAITS.ECSTATIC)+1) * 0.2;
 				}
 				
 				// tendency dampener
-				SanityTendencyModifier.instance.addToTendency(-factor, "", player);
+				SanityTendencyModifier.instance.addToTendency((float)-Math.max(factor,0.00001f), "", player);
 
 				if(tendency.getValue() > 50f)
 				{
