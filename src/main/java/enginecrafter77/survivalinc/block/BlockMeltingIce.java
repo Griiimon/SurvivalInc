@@ -20,7 +20,7 @@ public class BlockMeltingIce extends BlockMelting {
 
 	public BlockMeltingIce()
 	{
-		super(Blocks.ICE, Blocks.WATER);
+		super(Blocks.ICE, Blocks.FLOWING_WATER);
 		this.setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, "melting_ice"));
 		this.setTranslationKey("melting_ice");
 		this.setSoundType(SoundType.GLASS);
