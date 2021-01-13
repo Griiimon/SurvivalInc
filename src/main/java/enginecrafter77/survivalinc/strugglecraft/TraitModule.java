@@ -47,12 +47,12 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 		PETLOVER("Petlover", POS_TRAIT,70, USAGE_FREQUENCY_OFTEN),				// likes to be near pets
 		GREEN_THUMB("Green Thumb", POS_TRAIT,0),
 		STAR_CHILD("Star Child", POS_TRAIT,0),
-		COURAGEOUS("Courageous", POS_TRAIT,20,USAGE_FREQUENCY_OFTEN),			// less afraid of darkness
+		COURAGEOUS("Courageous", POS_TRAIT,40,USAGE_FREQUENCY_OFTEN),			// less afraid of darkness
 		WARM("Warm", POS_TRAIT,50, USAGE_FREQUENCY_CONTINUOUSLY),				// lower freezing threshold
 		AQUAPHILE("Aquaphile", POS_TRAIT,70, USAGE_FREQUENCY_OFTEN),			// more comfortable in (cold) water
 		HARD_WORKING("Hard Working", POS_TRAIT,0),
 		DISCIPLINED("Disciplined", POS_TRAIT,50),								// less chance of drug dependency
-		RUNNER("Runner", POS_TRAIT,100, USAGE_FREQUENCY_CONTINUOUSLY),
+		RUNNER("Runner", POS_TRAIT,100, USAGE_FREQUENCY_VERY_OFTEN),
 		MINER("Miner", POS_TRAIT,0),
 		HELIOPHILE("Heliophile", POS_TRAIT,50, USAGE_FREQUENCY_CONTINUOUSLY),	// loves sunshine		
 		WORKAHOLIC("Workaholic", POS_TRAIT,50, USAGE_FREQUENCY_OFTEN),			// mood boost from breaking blocks
@@ -83,7 +83,7 @@ public class TraitModule implements StatProvider<ListIntRecord>{
 		ACTIVE("Active", NEUT_TRAIT,50, USAGE_FREQUENCY_CONTINUOUSLY),			// more sanity from running, less from sleep
 		DEFENSIVE("Defensive", NEUT_TRAIT,0),
 		STUBBORN("Stubborn", NEUT_TRAIT,0),
-		TASTELESS("Tasteless", NEG_TRAIT,50),									// no sanity effects from food
+		TASTELESS("Tasteless", NEG_TRAIT,0),									// no sanity effects from food, removed cant level up
 		ANIMAL_LOVER("Animal Lover", NEUT_TRAIT, 70, USAGE_FREQUENCY_VERY_OFTEN),// likes to be around but not to kill animals
 	
 		
