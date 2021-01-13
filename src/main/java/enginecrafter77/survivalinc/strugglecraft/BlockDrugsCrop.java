@@ -39,6 +39,10 @@ public class BlockDrugsCrop extends BlockCrops{
     {
         super.updateTick(worldIn, pos, state, rand);
 
+		if(worldIn.getBiome(pos).getDefaultTemperature() < 0.2f)
+			return;
+
+        
         if (worldIn.getLightFromNeighbors(pos.up()) >= 9)
         {
             int i = this.getAge(state);
