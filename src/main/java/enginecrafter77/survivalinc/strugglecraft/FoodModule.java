@@ -73,11 +73,16 @@ public class FoodModule implements StatProvider<FoodRecord> {
 			foodTable= record.getFoodTable();
 			
 			
-//			player.sendMessage(new TextComponentString("This is food"));
+			boolean isGourmet= TraitModule.instance.HasTrait(player,TRAITS.GOURMET);
 
 			ItemFood food= (ItemFood)event.getItem().getItem();
 			int id= Item.getIdFromItem(food);
 			
+
+			float chanceModifier= 1f;
+			
+			if(isGourmet)
+				chanceModifier+= (TraitModule.instance.TraitTier(player,TRAITS.GOURMET) + 1);
 			
 			// decrease annoyance level of random known food
 			if(Util.chance((float)ModConfig.FOOD.decreaseLevelChance) && !foodTable.isEmpty())
@@ -93,7 +98,7 @@ public class FoodModule implements StatProvider<FoodRecord> {
 				
 					int offset= 0;
 					if(TraitModule.instance.HasTrait(player,TRAITS.NONDISCRIMINATORY))
-						offset+= 2;
+						offset+= 1 + TraitModule.instance.TraitTier(player,TRAITS.NONDISCRIMINATORY);
 					if(TraitModule.instance.HasTrait(player,TRAITS.GOURMET))
 						offset-=2;
 					
@@ -135,22 +140,24 @@ public class FoodModule implements StatProvider<FoodRecord> {
 					SanityTendencyModifier.instance.addToTendencyServer(foodSanityMap.get(food), "food", player);
 			}
 			else	// annoyance level only for foods not listed in sanity map / current favorite food
-			if(Util.chance((float)ModConfig.FOOD.increaseLevelChance))
+			if(Util.chance((float)ModConfig.FOOD.increaseLevelChance * chanceModifier))
 			{
 				
 				int level= foodTable.get(id)+1;
 				foodTable.put(id, level);
 				
 				boolean isNondiscriminatory= TraitModule.instance.HasTrait(player,TRAITS.NONDISCRIMINATORY);
+				
+				
 				int offset= 0;
 				if(isNondiscriminatory)
-					offset+= 2 + TraitModule.instance.TraitTier(player, TRAITS.NONDISCRIMINATORY);
-				if(TraitModule.instance.HasTrait(player,TRAITS.GOURMET))
+					offset+= 1 + TraitModule.instance.TraitTier(player, TRAITS.NONDISCRIMINATORY);
+				if(isGourmet)
 					offset-=2;
 				
 				if(level >= ModConfig.FOOD.enoughThreshold + offset)
 				{
-					SanityTendencyModifier.instance.addToTendencyOneTime(-1, "Same food", (EntityPlayer)event.getEntity());
+					SanityTendencyModifier.instance.addToTendencyServer(-3, "Same food", (EntityPlayer)event.getEntity());
 					player.sendMessage(new TextComponentString("Please no more "+event.getItem().getDisplayName()+"!"));
 					if(isNondiscriminatory)
 						TraitModule.instance.UsingTrait(player,TRAITS.NONDISCRIMINATORY, 2f);
@@ -183,6 +190,18 @@ public class FoodModule implements StatProvider<FoodRecord> {
 		FoodRecord record= tracker.getRecord(FoodModule.instance);
 
 		return record.getFoodTable();
+	}
+	
+	public int getHateLevel(EntityPlayer player)
+	{
+		int offset= 0;
+		
+		if(TraitModule.instance.HasTrait(player, TRAITS.NONDISCRIMINATORY))
+			offset+= 1 + TraitModule.instance.TraitTier(player, TRAITS.NONDISCRIMINATORY);
+		if(TraitModule.instance.HasTrait(player, TRAITS.GOURMET))
+			offset-=2;
+		
+		return ModConfig.FOOD.enoughThreshold + offset;	
 	}
 	
 /*	
