@@ -44,8 +44,6 @@ public class SurvivalInc {
 		SurvivalInc.logger = event.getModLog();
 		proxy.preInit(event);
 
-//		GameRegistry.registerTileEntity(TileEntityHeater.class, new ResourceLocation(SurvivalInc.MOD_ID, "heater"));
-
 	}
 
 	@EventHandler
