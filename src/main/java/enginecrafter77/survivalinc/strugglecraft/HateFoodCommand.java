@@ -17,7 +17,7 @@ public class HateFoodCommand extends CommandBase{
 	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
 		Hashtable<Integer, Integer> foodTable= FoodModule.instance.getFoodTable((EntityPlayer)sender);
 		for(int key : foodTable.keySet())
-			if(foodTable.get(key) > 4)
+			if(foodTable.get(key) >= FoodModule.instance.getHateLevel((EntityPlayer)sender))
 				sender.sendMessage(new TextComponentString(new ItemStack(Item.getItemById(key)).getDisplayName()));
 	}
 
