@@ -43,10 +43,13 @@ public class MyWorldSavedData extends WorldSavedData {
 	}
 
 	public void removeWorshipPlace(BlockPos pos) {
+		System.out.println("DEBUG: Trying to remove Worship Place at "+pos);
+
 		for (WorshipPlace place : worshipPlaces)
 			if (place.getPosition().equals(pos)) {
 				worshipPlaces.remove(place);
 				markDirty();
+				System.out.println("DEBUG: Found and removed");
 				return;
 			}
 
