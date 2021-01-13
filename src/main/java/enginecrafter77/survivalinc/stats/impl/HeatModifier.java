@@ -48,6 +48,8 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
  */
 public class HeatModifier implements StatProvider<SimpleStatRecord> {
 	private static final long serialVersionUID = 6260092840749029918L;
+
+	public static final float COLD_THRESHOLD= 25;
 	
 	public static Map<String, ItemArmor.ArmorMaterial> customArmorTypes= new HashMap<String, ItemArmor.ArmorMaterial>();
 	
@@ -198,11 +200,11 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 
 		boolean isColdResistant= TraitModule.instance.HasTrait(player, TRAITS.WARM);
 		
-		float coldResistance= isColdResistant ? TraitModule.instance.TraitTier(player, TRAITS.WARM) + 1 : 0f; 
+		float coldResistance= getColdResistance(player);
 		
 		float sanityDrop= 0f;
 		
-		if(heat.getValue() < 10f - coldResistance)
+		if(heat.getValue() < COLD_THRESHOLD - 15 - coldResistance)
 		{
 			if(Util.chance(1f))
 				new DamageStatEffect(HYPOTHERMIA, (float)ModConfig.HEAT.damageAmount, 10).apply(heat, player);
@@ -210,14 +212,14 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 				TraitModule.instance.UsingTrait(player, TRAITS.WARM);
 			sanityDrop+= 0.01f;
 		}
-		if(heat.getValue() < 20f - coldResistance)
+		if(heat.getValue() < COLD_THRESHOLD - 5 - coldResistance)
 		{
 			new PotionStatEffect(MobEffects.MINING_FATIGUE, 0).apply(heat, player);
 			if(isColdResistant)
 				TraitModule.instance.UsingTrait(player, TRAITS.WARM);
 			sanityDrop+= 0.005f;
 		}
-		if(heat.getValue() < 25f - coldResistance)
+		if(heat.getValue() < COLD_THRESHOLD - coldResistance)
 		{
 			new PotionStatEffect(MobEffects.WEAKNESS, 0).apply(record, player);
 			if(isColdResistant)
@@ -373,4 +375,12 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 
 		return heat.getValue();
 	}
+	
+	public static float getColdResistance(EntityPlayer player)
+	{
+		if(TraitModule.instance.HasTrait(player, TRAITS.WARM))
+			return TraitModule.instance.TraitTier(player, TRAITS.WARM) + 1;
+		return 0f;
+	}
+
 }
