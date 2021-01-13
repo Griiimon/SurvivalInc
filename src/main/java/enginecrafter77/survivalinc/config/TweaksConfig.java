@@ -32,6 +32,10 @@ public class TweaksConfig {
 		@Config.RangeDouble(min = 0)
 		public double sleepExhaustion= 0.001;
 		
+		@Config.LangKey("config.survivalinc:tweaks.rowingExhaustion")
+		@Config.RangeDouble(min = 0)
+		public double rowingExhaustion= 0.01;
+		
 		@Config.LangKey("config.survivalinc:tweaks.animalHealthMultiplier")
 		@Config.RangeDouble(min = 0)
 		public double animalHealthMultiplier= 6;
