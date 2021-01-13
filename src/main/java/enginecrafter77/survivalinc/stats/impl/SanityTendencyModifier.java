@@ -325,7 +325,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 		this.effects.apply(sanity, target);
 	
 		// base sanity drain
-		if(!target.isPlayerSleeping())
+		if(!target.isPlayerSleeping() || HeatModifier.instance.getPlayerTemperature(target) < HeatModifier.COLD_THRESHOLD - HeatModifier.getColdResistance(target))
 			addToTendency((float)(-Math.pow(target.world.getTotalWorldTime() / 24000, 0.85) * 0.0001), "", target);
 		
 		sanity.checkoutValueChange();
@@ -376,11 +376,13 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	}
 	
 
+	
 	@SubscribeEvent
-	public static void renderReason(RenderGameOverlayEvent.Post event)
+	public static void renderOverlay(RenderGameOverlayEvent.Post event)
 	{
 		if(instance.currentReasonStr == "")
 			return;
+		
 		
 		String str= instance.currentReasonStr;
 		
@@ -389,18 +391,27 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 		
 		if(event.getType() == ElementType.TEXT)
 		{
-			
+			// reasons
 			renderer.drawString(str, event.getResolution().getScaledWidth()-renderer.getStringWidth(str), event.getResolution().getScaledHeight()-renderer.FONT_HEIGHT, str.contains("+") ? 0x00ff00 : 0xff0000,false);
-			if(Minecraft.getMinecraft().player.isPlayerSleeping())
+			
+
+			
+			
+//			EntityPlayer player= Minecraft.getMinecraft().player;
+	
+				
+//			if(player.isPlayerSleeping() || player.isRiding())
+				if(Minecraft.getMinecraft().player.isPlayerSleeping() || Minecraft.getMinecraft().player.isRiding())
 			{
+				// food pct
 				int foodPct= (int)Math.floor(Minecraft.getMinecraft().player.getFoodStats().getFoodLevel() / 20f * 100f);
 				String text= "Food: "+foodPct+"%";
-
-				renderer.drawString(text, event.getResolution().getScaledWidth()-renderer.getStringWidth(text), event.getResolution().getScaledHeight()-renderer.FONT_HEIGHT*3, 0xFFFFFF, false);//true);
-		
+				int color= foodPct > 50f ? 0xFFFFFF : 0xFF0000;
+				renderer.drawString(text, event.getResolution().getScaledWidth()-renderer.getStringWidth(text), event.getResolution().getScaledHeight()-renderer.FONT_HEIGHT*3, color, false);//true);
 			}
+				
+			
 		}
-		
 	}
 	
 	@Override
@@ -492,9 +503,6 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 			if(creature instanceof EntityTameable)
 			{
 				EntityTameable pet = (EntityTameable)creature;
-				// 4x bonus for tamed creatures. Having pets has it's perks :D
-//				float bonus = pet.isTamed() ? (float)ModConfig.SANITY.tamedMobMultiplier : 1;
-//				value += ModConfig.SANITY.friendlyMobBonus * bonus;
 				if(pet.isTamed())
 				{	
 					float factor= (float)ModConfig.SANITY.tamedMobProximity;
@@ -515,7 +523,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	
 	public static void whenRunning(SanityRecord record, EntityPlayer player)
 	{
-		if(player.isSprinting() && player.getActivePotionEffect(MobEffects.SLOWNESS) == null)
+		if(player.isSprinting() && player.getActivePotionEffect(MobEffects.SLOWNESS) == null && !player.isInWater())
 		{
 			float factor= (float)ModConfig.SANITY.runningRelieve;
 			if(TraitModule.instance.HasTrait(player,TRAITS.RUNNER))
@@ -594,7 +602,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	
 	public static void whenSleeping(SanityRecord record, EntityPlayer player)
 	{
-		if(player.isPlayerSleeping())
+		if(player.isPlayerSleeping() && HeatModifier.instance.getPlayerTemperature(player) >= HeatModifier.COLD_THRESHOLD - HeatModifier.getColdResistance(player))
 		{
 			float factor= 1f;
 			
@@ -825,9 +833,14 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 				{
 					if(entry.getValue() instanceof TileEntityMobSpawner)
 					{
-						if(Util.distance(player, entry.getKey()) < 35)
+						double dist= Util.distance(player, entry.getKey());
+						if(dist < 35)
 						{
-							SanityTendencyModifier.instance.addToTendencyServer(-10f, "Evil place", player);
+							float factor= 1f;
+							if(dist < 15)
+								factor= 2f;
+							
+							SanityTendencyModifier.instance.addToTendencyServer(-10f*factor, "Evil place", player);
 							break;
 						}
 					}
