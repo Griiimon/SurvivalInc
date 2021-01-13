@@ -87,15 +87,44 @@ public class BlockMonolith extends Block implements ITileEntityProvider {
 	}
 	
 	@Override
-	public void breakBlock(World worldIn, BlockPos pos, IBlockState state)
+	public void breakBlock(World world, BlockPos pos, IBlockState state)
 	{
-//	 final boolean CASCADE_UPDATE = false;  // I'm not sure what this flag does, but vanilla always sets it to false
-	 // except for calls by World.setBlockState()
-//	 worldIn.notifyNeighborsOfStateChange(pos, this, CASCADE_UPDATE);
-		
 		//TODO remove place and set all tile entities to false
+
+		System.out.println("DEBUG: Monolith at "+pos+" destroyed");
 		
-		super.breakBlock(worldIn, pos, state);
+		TileEntityMonolith origTE= (TileEntityMonolith)world.getTileEntity(pos);
+		MyWorldSavedData.get(world).removeWorshipPlace(origTE.circleCenter);
+		origTE.active= false;
+		
+		ArrayList<BlockPos> list= new ArrayList<BlockPos>();
+		
+		list.add(pos);
+		
+		while(list.size() > 0)
+		{
+		
+			BlockPos currentPos= list.get(0);
+			
+			list.remove(0);
+			
+			for (int x = -1; x < 2; x++)
+				for (int z = -1; z < 2; z++)
+					if (x != 0 || z != 0) {
+						BlockPos checkPos = new BlockPos(currentPos.getX() + x, currentPos.getY(),currentPos.getZ() + z);
+						if (world.getBlockState(checkPos).getBlock() == ModBlocks.MONOLITH.get()) {
+							TileEntityMonolith te= (TileEntityMonolith)world.getTileEntity(checkPos);
+							if(te.active)
+							{
+								te.active= false;
+								list.add(checkPos);
+								System.out.println("DEBUG: Disabling MonolithTE at "+checkPos);
+							}
+						}
+					}
+		}
+		
+		super.breakBlock(world, pos, state);
 	}
 
 
