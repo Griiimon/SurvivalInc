@@ -196,7 +196,7 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 	
 	public static void whenInWater(SimpleStatRecord record, EntityPlayer player)
 	{
-		if(player.isInWater())
+		if(player.isInWater() && player.isRiding())
 		{
 			Material headBlockMaterial = player.world.getBlockState(new BlockPos(player).up()).getMaterial();
 			if(headBlockMaterial == Material.WATER) record.addToValue(5F);
