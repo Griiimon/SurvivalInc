@@ -1,14 +1,7 @@
 package enginecrafter77.survivalinc;
 
 import enginecrafter77.survivalinc.item.*;
-import enginecrafter77.survivalinc.ModBlocks;
-import enginecrafter77.survivalinc.strugglecraft.WoolArmor;
-import enginecrafter77.survivalinc.strugglecraft.StrawArmor;
-import enginecrafter77.survivalinc.strugglecraft.HeadbandArmor;
-import enginecrafter77.survivalinc.strugglecraft.RainArmor;
-import enginecrafter77.survivalinc.strugglecraft.ItemDrug;
-import enginecrafter77.survivalinc.strugglecraft.Drug;
-import enginecrafter77.survivalinc.strugglecraft.ItemDrugsSeed;
+import enginecrafter77.survivalinc.strugglecraft.*;
 
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.inventory.EntityEquipmentSlot;
@@ -32,6 +25,10 @@ public enum ModItems {
 	WOOL_SWEATER(new WoolArmor("wool_chestplate", EntityEquipmentSlot.CHEST), "wool_chestplate"),
 	WOOL_PANTS(new WoolArmor("wool_leggings", EntityEquipmentSlot.LEGS), "wool_leggings"),
 	WOOL_SOCKS(new WoolArmor("wool_boots", EntityEquipmentSlot.FEET), "wool_boots"),
+	WINTER_HAT(new WinterArmor("winter_helmet", EntityEquipmentSlot.HEAD), "winter_helmet"),
+	WINTER_SWEATER(new WinterArmor("winter_chestplate", EntityEquipmentSlot.CHEST), "winter_chestplate"),
+	WINTER_PANTS(new WinterArmor("winter_leggings", EntityEquipmentSlot.LEGS), "winter_leggings"),
+	WINTER_SOCKS(new WinterArmor("winter_boots", EntityEquipmentSlot.FEET), "winter_boots"),
 	WEED(new Item().setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, "weed")).setCreativeTab(SurvivalInc.mainTab), "weed"),
 	WEED_SEEDS(new ItemDrugsSeed("weed_seeds", ModBlocks.WEED_CROP, WEED), "weed_seeds"),
 	JOINT(new ItemDrug(Drug.JOINT), "joint"),
@@ -47,7 +44,9 @@ public enum ModItems {
 	STRAW_HAT(new StrawArmor("straw_helmet", EntityEquipmentSlot.HEAD), "straw_helmet"),
 	HEADBAND(new HeadbandArmor("headband", EntityEquipmentSlot.HEAD, false), "headband"),
 	SUPERIOR_HEADBAND(new HeadbandArmor("superior_headband", EntityEquipmentSlot.HEAD, true), "superior_headband"),
-	RAIN_CAPE(new RainArmor("raincape", EntityEquipmentSlot.CHEST), "raincape")
+	RAIN_CAPE(new RainArmor("raincape", EntityEquipmentSlot.CHEST), "raincape"),
+	WINTER_ITEM(new Item().setRegistryName(new ResourceLocation(SurvivalInc.MOD_ID, "winter_item")).setCreativeTab(SurvivalInc.mainTab), "winter_item"),
+	ARMORED_BOAT(new ItemArmoredBoat(), "armored_boat"),
 	;
 
 	

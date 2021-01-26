@@ -1,0 +1,36 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [
+		"   ",
+		" W ",
+		"WFW"
+	],
+	"key": {
+		"W": [
+		{
+		  "item": "minecraft:wool",
+		  "data": 0
+		},
+		{
+		  "item": "minecraft:wool",
+		  "data": 7
+		},
+		{
+		  "item": "minecraft:wool",
+		  "data": 8
+		},
+		{
+		  "item": "minecraft:wool",
+		  "data": 15
+		}
+		],
+		"F": {
+			"item": "minecraft:feather",
+			"data": 0
+		}
+	},
+	"result": {
+		"item": "survivalinc:umbrella",
+		"data": 0
+	}
+}

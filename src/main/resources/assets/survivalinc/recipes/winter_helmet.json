@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "XXX",
+    "X X"
+  ],
+  "key": {
+    "X": 	{
+      "item": "survivalinc:winter_item",
+	  "data": 0
+    }
+  },
+  "result": {
+    "item": "survivalinc:winter_helmet"
+  }
+}
