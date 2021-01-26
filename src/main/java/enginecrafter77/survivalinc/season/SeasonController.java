@@ -185,45 +185,4 @@ public class SeasonController implements IMessageHandler<SeasonSyncMessage, IMes
 		
 	}
 
-	/**
-	 * Add bonus harvest drops from crops in the Autumn.
-	 * @param event The block harvest drops event
-	 */
-	@SubscribeEvent
-	public void onCropHarvest(BlockEvent.HarvestDropsEvent event)
-	{
-		World world = event.getWorld();
-		IBlockState state = event.getState();
-		
-		// Is (was?) the harvested block really a crop?
-		if(state.getBlock() instanceof BlockCrops && !world.isRemote)
-		{
-			SeasonData data = SeasonData.load(event.getWorld());
-			BlockCrops crop = (BlockCrops)state.getBlock();
-			List<ItemStack> drops = event.getDrops();
-			if(!crop.isMaxAge(event.getState())) drops.clear();
-			else if(data.season == Season.AUTUMN)
-			{
-				for(ItemStack drop : drops) // Double the outcome
-					drop.grow(drop.getCount());
-			}
-		}
-	}
-
-	/**
-	 * Make nothing grow in winter, and let crops grow faster in summer
-	 * @param event
-	 */
-	@SubscribeEvent
-	public void affectGrowth(BlockEvent.CropGrowEvent.Pre event)
-	{		
-		World world = event.getWorld();
-		if(world.isRemote) return; // We don't want to check client side
-		
-		SeasonData data = SeasonData.load(world);
-		Event.Result result = Event.Result.DEFAULT;
-		if(data.season == Season.WINTER)
-			result = Event.Result.DENY;
-		event.setResult(result);
-	}
 }
