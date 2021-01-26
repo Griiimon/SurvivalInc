@@ -3,6 +3,7 @@ package enginecrafter77.survivalinc.strugglecraft;
 import java.util.ArrayList;
 
 import enginecrafter77.survivalinc.SurvivalInc;
+import enginecrafter77.survivalinc.strugglecraft.WorshipPlace.WORSHIP_PLACE_TYPE;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -42,8 +43,13 @@ public class MyWorldSavedData extends WorldSavedData {
 		markDirty();
 	}
 
+	public void addWorshipPlace(BlockPos pos, int height, int value) {
+		worshipPlaces.add(new WorshipPlace(pos, value, height));
+		markDirty();
+	}
+
 	public void removeWorshipPlace(BlockPos pos) {
-		System.out.println("DEBUG: Trying to remove Worship Place at "+pos);
+		System.out.println("DEBUG: Trying to remove Worship Place at " + pos);
 
 		for (WorshipPlace place : worshipPlaces)
 			if (place.getPosition().equals(pos)) {
@@ -64,9 +70,17 @@ public class MyWorldSavedData extends WorldSavedData {
 	public void readFromNBT(NBTTagCompound nbt) {
 		int arr[] = nbt.getIntArray("worshiparr");
 
-		for (int i = 0; i < arr.length; i += 4) {
-			worshipPlaces.add(new WorshipPlace(new BlockPos(arr[i], arr[i + 1], arr[i + 2]), arr[i + 3]));
-		}
+		if (arr != null)
+			for (int i = 0; i < arr.length; i += 4) {
+				worshipPlaces.add(new WorshipPlace(new BlockPos(arr[i], arr[i + 1], arr[i + 2]), arr[i + 3]));
+			}
+
+		arr = nbt.getIntArray("monumentarr");
+
+		if (arr != null)
+			for (int i = 0; i < arr.length; i += 4) {
+				worshipPlaces.add(new WorshipPlace(new BlockPos(arr[i], arr[i + 1], arr[i + 2]), arr[i + 3], arr[i + 4]));
+			}
 
 		System.out.println("DEBUG: Loaded " + worshipPlaces.size() + " worship places");
 
@@ -78,6 +92,9 @@ public class MyWorldSavedData extends WorldSavedData {
 
 		int i = 0;
 		for (WorshipPlace place : worshipPlaces) {
+			if (place.type != WORSHIP_PLACE_TYPE.STONE_CIRCLE)
+				continue;
+
 			arr[i++] = place.getPosition().getX();
 			arr[i++] = place.getPosition().getY();
 			arr[i++] = place.getPosition().getZ();
@@ -85,6 +102,22 @@ public class MyWorldSavedData extends WorldSavedData {
 		}
 
 		nbt.setIntArray("worshiparr", arr);
+
+		arr = new int[worshipPlaces.size() * 5];
+
+		i = 0;
+		for (WorshipPlace place : worshipPlaces) {
+			if (place.type != WORSHIP_PLACE_TYPE.MONUMENT)
+				continue;
+
+			arr[i++] = place.getPosition().getX();
+			arr[i++] = place.getPosition().getY();
+			arr[i++] = place.getPosition().getZ();
+			arr[i++] = place.getValue();
+			arr[i++] = place.getHeight();
+		}
+
+		nbt.setIntArray("monumentarr", arr);
 
 		System.out.println("DEBUG: Saved " + worshipPlaces.size() + " worship places");
 

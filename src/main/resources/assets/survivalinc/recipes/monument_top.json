@@ -1,0 +1,22 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"pattern": [
+		"G*G",
+		"G*G",
+		"G*G"
+	],
+	"key": {
+		"*": {
+			"item": "minecraft:iron_ingot",
+			"data": 0
+		},
+		"G": {
+			"item": "minecraft:glass",
+			"data": 0
+		}
+	},
+	"result": {
+		"item": "survivalinc:monument_top",
+		"data": 0
+	}
+}

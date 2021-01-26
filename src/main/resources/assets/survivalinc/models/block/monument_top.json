@@ -1,0 +1,8 @@
+{
+    "parent": "block/orientable",
+    "textures": {
+        "top": "survivalinc:blocks/monument_top",
+        "front": "survivalinc:blocks/monument_top",
+        "side": "survivalinc:blocks/monument_top"
+    }
+}

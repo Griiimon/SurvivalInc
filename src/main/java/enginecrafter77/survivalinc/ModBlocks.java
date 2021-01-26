@@ -30,7 +30,9 @@ public enum ModBlocks implements Supplier<Block> {
 	TOBACCO_CROP(new BlockDrugsCrop("tobacco_crop")),
 	COCA_CROP(new BlockDrugsCrop("coca_crop")),
 	POPPY_CROP(new BlockDrugsCrop("poppy_crop")),
-	MONOLITH(new BlockMonolith())
+	MONOLITH(new BlockMonolith()),
+	MONUMENT_TOP(new BlockMonumentTop()),
+	MONUMENT_STRUCTURE(new BlockMonumentStructure())
 	
 	;
 	
