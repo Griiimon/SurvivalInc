@@ -5,6 +5,7 @@ import enginecrafter77.survivalinc.client.GuiHandler;
 import enginecrafter77.survivalinc.config.ModConfig;
 import enginecrafter77.survivalinc.debug.HeatDebugCommand;
 import enginecrafter77.survivalinc.debug.LightDebugCommand;
+import enginecrafter77.survivalinc.debug.MonumentRaytraceDebugCommands;
 import enginecrafter77.survivalinc.debug.SanityDebugCommand;
 import enginecrafter77.survivalinc.ghost.GhostCommand;
 import enginecrafter77.survivalinc.ghost.GhostProvider;
@@ -12,6 +13,8 @@ import enginecrafter77.survivalinc.net.DebugToggleMessage;
 import enginecrafter77.survivalinc.net.DebugToggleUpdater;
 import enginecrafter77.survivalinc.net.EntityItemUpdateMessage;
 import enginecrafter77.survivalinc.net.EntityItemUpdater;
+import enginecrafter77.survivalinc.net.SanityOverviewMessage;
+import enginecrafter77.survivalinc.net.SanityOverviewReceiver;
 import enginecrafter77.survivalinc.net.SanityReasonMessage;
 import enginecrafter77.survivalinc.net.StatSyncMessage;
 import enginecrafter77.survivalinc.net.StatSyncHandler;
@@ -32,6 +35,7 @@ import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.stats.impl.WetnessModifier;
 import enginecrafter77.survivalinc.strugglecraft.*;
 import net.minecraft.command.CommandHandler;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.CapabilityManager;
@@ -79,6 +83,7 @@ public class CommonProxy {
 		
 		this.net.registerMessage(DebugToggleUpdater.class, DebugToggleMessage.class, 4, Side.CLIENT);
 		this.net.registerMessage(SanityTendencyModifier.class, SanityReasonMessage.class, 5, Side.CLIENT);
+		this.net.registerMessage(SanityOverviewReceiver.class, SanityOverviewMessage.class, 6, Side.CLIENT);
 		
 		if(ModConfig.HEAT.enabled) HeatModifier.instance.init();
 		if(ModConfig.HYDRATION.enabled) HydrationModifier.instance.init();
@@ -119,6 +124,9 @@ public class CommonProxy {
 		if(ModConfig.SEASONS.enabled) manager.registerCommand(new SeasonCommand());
 		if(ModConfig.GHOST.enabled) manager.registerCommand(new GhostCommand());
 		if(ModConfig.SANITY.enabled) manager.registerCommand(new SanityDebugCommand());
+		if(ModConfig.SANITY.enabled) manager.registerCommand(new SanityOverviewCommand());
+		if(ModConfig.SANITY.enabled) manager.registerCommand(new BoosterBlockCommand());
+		if(ModConfig.SANITY.enabled) manager.registerCommand(new BoosterCalcCommand());
 		if(ModConfig.TRAITS.enabled) manager.registerCommand(new TraitsCommand());
 		if(ModConfig.TRAITS.enabled) manager.registerCommand(new DeathsCommand());
 		if(ModConfig.FOOD.enabled) manager.registerCommand(new FavouriteFoodCommand());
@@ -126,18 +134,29 @@ public class CommonProxy {
 		if(ModConfig.FOOD.enabled) manager.registerCommand(new KnownFoodCommand());
 		if(ModConfig.DEBUG.sanity) manager.registerCommand(new AddTendencyCommand());
 		if(ModConfig.DEBUG.sanity) manager.registerCommand(new SetSanityCommand());
+		if(ModConfig.DEBUG.sanity) manager.registerCommand(new MonumentRaytraceDebugCommands());
 		if(ModConfig.DEBUG.traits) manager.registerCommand(new DebugTraitsCommand());
+		
 		manager.registerCommand(new LightDebugCommand());
 		manager.registerCommand(new HeatDebugCommand());
+
 		if(ModConfig.DRUGS.enabled) manager.registerCommand(new DrugsCommand());
 		manager.registerCommand(new WorshipCommand());
-			
+
+		manager.registerCommand(new DaysCommand());
+
+		
 		manager.registerCommand(new StatCommand());
+		
+		
 	}
 	
 	public void AddReasonToClient(float value, String reason, boolean forceAdd)
 	{
-		
+	}
+	
+	public void SanityOverviewOnClient(EntityPlayer player)
+	{
 	}
 	
 }
