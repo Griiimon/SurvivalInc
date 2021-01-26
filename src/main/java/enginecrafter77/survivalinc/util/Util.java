@@ -71,6 +71,12 @@ public class Util {
 		return (int)Math.floor(Math.random()*r);
 	}
 
+	public static int rnd(World world, int r)
+	{
+		return (int)Math.floor(world.rand.nextFloat()*r);
+	}
+
+	
 	public static int rnd(int min, int max)
 	{
 		return (int)Math.floor(Math.random()*(max-min)+min);
@@ -89,6 +95,11 @@ public class Util {
 	public static float rndf(float r)
 	{
 		return (float)Math.random()*r;
+	}
+	
+	public static float randf()
+	{
+		return (float)Math.random();
 	}
 	
 	public static boolean chance(float f)
