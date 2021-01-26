@@ -13,6 +13,7 @@ import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.passive.EntityTameable;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.Items;
 import net.minecraft.init.MobEffects;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
@@ -28,6 +29,8 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
@@ -69,6 +72,7 @@ import enginecrafter77.survivalinc.config.ModConfig;
 import enginecrafter77.survivalinc.debug.LightDebugCommand;
 import enginecrafter77.survivalinc.debug.SanityDebugCommand;
 import enginecrafter77.survivalinc.net.EntityItemUpdateMessage;
+import enginecrafter77.survivalinc.net.SanityOverviewMessage;
 import enginecrafter77.survivalinc.net.SanityReasonMessage;
 import enginecrafter77.survivalinc.net.StatSyncMessage;
 import enginecrafter77.survivalinc.stats.SimpleStatRecord;
@@ -86,6 +90,7 @@ import enginecrafter77.survivalinc.strugglecraft.MyWorldSavedData;
 import enginecrafter77.survivalinc.strugglecraft.TraitModule;
 import enginecrafter77.survivalinc.strugglecraft.TraitModule.TRAITS;
 import enginecrafter77.survivalinc.strugglecraft.WorshipPlace;
+import enginecrafter77.survivalinc.strugglecraft.WorshipPlace.WORSHIP_PLACE_TYPE;
 import enginecrafter77.survivalinc.util.Util;
 
 public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMessageHandler<SanityReasonMessage, IMessage> {
@@ -112,11 +117,15 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	int reasonTicks= 0;
 	int reasonFlipTicks= 60;
 
+	public Map<String, Float> overview;
+	public long overviewTimestamp= 0;
+	
 	public SanityTendencyModifier()
 	{
 		this.effects = new EffectApplicator<SanityRecord>();
 //		reasons= new ArrayList<ReasonEntry>();
 		reasons= Collections.synchronizedList(new ArrayList<ReasonEntry>());
+		overview= Collections.synchronizedMap(new HashMap<String, Float>());
 	}
 	
 	public void init()
@@ -132,6 +141,8 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 		this.effects.add(SanityTendencyModifier::whenInWater);
 		this.effects.add(SanityTendencyModifier::whenNight);
 		this.effects.add(SanityTendencyModifier::whenWearing);
+		this.effects.add(SanityTendencyModifier::whenDepressed);
+		this.effects.add(SanityTendencyModifier::whenEducated);
 	
 	}
 	
@@ -150,6 +161,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 
 			System.out.println(player.getName()+" spawned");
 
+			instance.ClearOverviewData(event.getWorld());
 			
 //			if(!Util.thisClientOnly(player))
 			if(event.getWorld().isRemote)
@@ -252,12 +264,20 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 			return;
 
 		addReason(value, reason, forceAddReason, oneTime);
-		
+
 	}
 	
 
 	public void addReason(float value, String reason, boolean forceAddReason, boolean oneTime)
 	{
+		if(!overview.containsKey(reason))
+			overview.put(reason, value);
+		else
+			overview.put(reason, overview.get(reason)+value);
+		
+		if(reason == "Drain" || reason == "Depressed")
+			return;
+		
 		if(reasons.size() < 3 || forceAddReason)
 		{
 			boolean alreadyUsed= false;
@@ -315,7 +335,13 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	@Override
 	public void update(EntityPlayer target, StatRecord record)
 	{
+		if(target.isDead)
+			overviewTimestamp= 0;
+		
 		if(target.isCreative() || target.isSpectator() || target.isDead/* || target.world.isRemote*/) return;
+		
+		if(overviewTimestamp == 0)
+			overviewTimestamp= target.world.getTotalWorldTime();
 		
 		if(target.world.isRemote && !Util.thisClientOnly(target))
 			return;
@@ -326,7 +352,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	
 		// base sanity drain
 		if(!target.isPlayerSleeping() || HeatModifier.instance.getPlayerTemperature(target) < HeatModifier.COLD_THRESHOLD - HeatModifier.getColdResistance(target))
-			addToTendency((float)(-Math.pow(target.world.getTotalWorldTime() / 24000, 0.85) * 0.0001), "", target);
+			addToTendency((float)(-Math.pow(target.world.getTotalWorldTime() / 24000, 0.55) * 0.0001), "Drain", target);
 		
 		sanity.checkoutValueChange();
 		
@@ -444,6 +470,9 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	
 	public static void whenInDark(SanityRecord record, EntityPlayer player)
 	{
+		if(player.isPlayerSleeping())
+			return;
+		
 		BlockPos position = new BlockPos(player.getPositionVector().add(0D, player.getEyeHeight(), 0D));
 		int lightlevel = player.world.getLight(position);
 		
@@ -523,17 +552,20 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 	
 	public static void whenRunning(SanityRecord record, EntityPlayer player)
 	{
+		if(!player.world.isRemote)
+			return;
+		
 		if(player.isSprinting() && player.getActivePotionEffect(MobEffects.SLOWNESS) == null && !player.isInWater())
 		{
 			float factor= (float)ModConfig.SANITY.runningRelieve;
 			if(TraitModule.instance.HasTrait(player,TRAITS.RUNNER))
 			{
-				factor*= (TraitModule.instance.TraitTier(player,TRAITS.RUNNER)+2)/2f;
+				factor*= 1f + (TraitModule.instance.TraitTier(player,TRAITS.RUNNER)+1)/2f;
 				TraitModule.instance.UsingTrait(player,TRAITS.RUNNER);
 			}
 			if(TraitModule.instance.HasTrait(player,TRAITS.ACTIVE))
 			{
-				factor*= (TraitModule.instance.TraitTier(player,TRAITS.ACTIVE)+2)/4f;
+				factor*= 1f+(TraitModule.instance.TraitTier(player,TRAITS.ACTIVE)+1)/4f;
 				TraitModule.instance.UsingTrait(player,TRAITS.ACTIVE);
 			}
 			
@@ -633,6 +665,9 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 			return;
 		
 		ItemStack head= player.getItemStackFromSlot(EntityEquipmentSlot.HEAD);
+		ItemStack body= player.getItemStackFromSlot(EntityEquipmentSlot.CHEST);
+		ItemStack legs= player.getItemStackFromSlot(EntityEquipmentSlot.LEGS);
+		ItemStack feet= player.getItemStackFromSlot(EntityEquipmentSlot.FEET);
 		
 		if(head != null)
 		{
@@ -641,9 +676,43 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 			else
 				if(head.getItem() == ModItems.SUPERIOR_HEADBAND.getItem())
 					instance.addToTendency(0.002f, "Headband", player);
+				else
+					if(head.getItem() == Items.GOLDEN_HELMET)
+						instance.addToTendency(0.005f, "Wearing Gold", player);
 		}
+		
+		if(body != null)
+		{
+			if(body.getItem() == Items.GOLDEN_CHESTPLATE)
+				instance.addToTendency(0.01f, "Wearing Gold", player);
+		}
+
+		if(legs != null)
+		{
+			if(legs.getItem() == Items.GOLDEN_LEGGINGS)
+				instance.addToTendency(0.008f, "Wearing Gold", player);
+		}
+
+		if(feet != null)
+		{
+			if(feet.getItem() == Items.GOLDEN_BOOTS)
+				instance.addToTendency(0.003f, "Wearing Gold", player);
+		}
+
 	}
 
+	public static void whenDepressed(SanityRecord record, EntityPlayer player)
+	{
+		if(!player.isPlayerSleeping())
+			if(TraitModule.instance.HasTrait(player, TRAITS.DEPRESSED))
+				instance.addToTendency(-0.0001f * (TraitModule.instance.TraitTier(player, TRAITS.DEPRESSED) + 1), "Depressed", player);
+
+	}
+	
+	public static void whenEducated(SanityRecord record, EntityPlayer player)
+	{
+		
+	}
 	
 	@SubscribeEvent
 	public static void onPlayerWakeUp(PlayerWakeUpEvent event)
@@ -670,7 +739,7 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 			{
 				TraitModule.instance.UsingTrait(event.getPlayer(), TRAITS.WORKAHOLIC, hardness);
 				// TODO is server correct?
-				SanityTendencyModifier.instance.addToTendencyServer(0.01f*(TraitModule.instance.TraitTier(event.getPlayer(), TRAITS.WORKAHOLIC) + 1), "Workaholic", event.getPlayer(), true);
+				SanityTendencyModifier.instance.addToTendencyServer(0.05f*(TraitModule.instance.TraitTier(event.getPlayer(), TRAITS.WORKAHOLIC) + 1), "Workaholic", event.getPlayer(), true);
 			}
 		}
 	}
@@ -781,6 +850,8 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 		{
 			 PlayerList players= event.world.getMinecraftServer().getPlayerList();
 
+			 // STONE CIRCLES
+			 
 			 List<EntityPlayerMP> playerList= new ArrayList<EntityPlayerMP>();
 			 List<EntityPlayerMP> removeList= new ArrayList<EntityPlayerMP>();
 			 
@@ -790,9 +861,12 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 			 
 			for(WorshipPlace place : MyWorldSavedData.get(event.world).getWorshipPlaces())
 			{
+				if(place.type != WORSHIP_PLACE_TYPE.STONE_CIRCLE)
+					continue;
+				
 				for(EntityPlayerMP player : playerList)
 				{
-					if(player.isPlayerSleeping())
+					if(player.isPlayerSleeping() || player.isDead)
 						continue;
 					
 					if(Util.distance(player, place.getPosition()) < place.getValue())
@@ -808,8 +882,64 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 					playerList.remove(removeList.get(0));
 					removeList.remove(0);
 				}
+			}
+
+		
+			// MONUMENTS
+
+			 playerList= new ArrayList<EntityPlayerMP>();
+			 removeList= new ArrayList<EntityPlayerMP>();
+			 
+			playerList.addAll(players.getPlayers());
+			 
+			System.out.println("DEBUG: Searching "+MyWorldSavedData.get(event.world).getWorshipPlaces().size()+" worship places");
+			 
+			for(WorshipPlace place : MyWorldSavedData.get(event.world).getWorshipPlaces())
+			{
+				for(EntityPlayerMP player : playerList)
+				{
+					if(place.type != WORSHIP_PLACE_TYPE.MONUMENT)
+						continue;
+
+					if(player.isPlayerSleeping()  || player.isDead)
+						continue;
+					
+					BlockPos pos= new BlockPos(place.getPosition());
+					pos.add(new Vec3i(0,-place.getHeight(),0));
+	
+					// add bonus for being near base
+/*					if(Util.distance(player,  pos) < 10)
+					{
+						SanityTendencyModifier.instance.addToTendencyServer((float)Math.min(30f, Math.pow(place.getValue(), 0.3f)), "Monument", player);
+						// remove player from any further worship checks
+						removeList.add(player);
+					}
+					else
+*/					{
+
+						if(player.getDistanceSq(place.getPosition()) < place.getValue() * 2 || player.getDistanceSq(place.getPosition().down(place.getHeight())) < place.getValue() * 2)
+						{
+							RayTraceResult result= event.world.rayTraceBlocks(new Vec3d(player.getPosition().up()), new Vec3d(place.getPosition()), false, false, false);
+							
+							if(result != null && result.getBlockPos() == place.getPosition())
+							{
+								SanityTendencyModifier.instance.addToTendencyServer(30f, "Monument", player);
+								removeList.add(player);
+							}
+						}
+					}
+				}
+				
+				while(removeList.size()>0)
+				{
+					playerList.remove(removeList.get(0));
+					removeList.remove(0);
+				}
 				
 			}
+
+		
+		
 		}
 
 
@@ -868,6 +998,12 @@ public class SanityTendencyModifier implements StatProvider<SanityRecord>, IMess
 		return null;
 	
 	}
+
 	
+	public void ClearOverviewData(World world)
+	{
+		instance.overview.clear();
+		instance.overviewTimestamp= world.getTotalWorldTime();
+	}
 	
 }

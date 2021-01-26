@@ -1,5 +1,7 @@
 package enginecrafter77.survivalinc;
 
+import java.text.DecimalFormat;
+
 import enginecrafter77.survivalinc.client.DifferentialArrow;
 import enginecrafter77.survivalinc.client.Direction2D;
 import enginecrafter77.survivalinc.client.ElementPositioner;
@@ -21,7 +23,10 @@ import enginecrafter77.survivalinc.stats.impl.HydrationModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.stats.impl.SanityRecord;
+import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -111,4 +116,30 @@ public class ClientProxy extends CommonProxy {
 		SanityTendencyModifier.instance.addReason(value, reason, forceAdd, true);
 	}
 
+	@Override
+	public void SanityOverviewOnClient(EntityPlayer player)
+	{
+		int passedTicks= (int)(Minecraft.getMinecraft().world.getTotalWorldTime() - SanityTendencyModifier.instance.overviewTimestamp);
+
+		DecimalFormat f = new DecimalFormat("##.00");
+		
+		Minecraft.getMinecraft().player.sendMessage(new TextComponentString("Overview ("+(passedTicks / 1200)+" minutes):"));
+
+		for(String reason : SanityTendencyModifier.instance.overview.keySet())
+		{
+			float value= SanityTendencyModifier.instance.overview.get(reason);
+			float perMin= passedTicks == 0 ? 0 : (float)value / ((float)passedTicks / 1200f);
+			String formVal= Math.abs(value) < 1 ? "0" : "" + f.format(value);
+			String formValMin= Math.abs(perMin) < 1 ? "0" : "" + f.format(perMin);
+			
+			String str= (value > 0f ? "+" : "")+formVal+" ( "+formValMin+"/min )";
+			
+			Minecraft.getMinecraft().player.sendMessage(new TextComponentString(reason+" "+str));
+		}
+		
+		
+		SanityTendencyModifier.instance.ClearOverviewData(Minecraft.getMinecraft().world);
+	}
+	
+	
 }
