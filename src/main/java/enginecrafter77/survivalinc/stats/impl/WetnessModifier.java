@@ -186,12 +186,8 @@ public class WetnessModifier implements StatProvider<SimpleStatRecord> {
 	public static void causeDripping(SimpleStatRecord record, EntityPlayer player)
 	{
 		WorldClient world = (WorldClient)player.world;
-		Random rng = world.rand;
-//		for(int index = Math.round(4F * record.getNormalizedValue()); index > 0; index--)
-//		{
 		if(Util.chance(record.getNormalizedValue() * 10))
-			world.spawnParticle(EnumParticleTypes.DRIP_WATER, player.posX + (rng.nextFloat() * 0.5 - 0.25), player.posY + (rng.nextFloat() * 1 + 0.25), player.posZ + (rng.nextFloat() * 0.5 - 0.25), player.motionX, -0.5, player.motionZ);
-//		}
+			world.spawnParticle(EnumParticleTypes.DRIP_WATER, player.posX + (Util.randf() * 0.5 - 0.25), player.posY + (Util.randf() * 1 + 0.25), player.posZ + (Util.randf() * 0.5 - 0.25), player.motionX, -0.5, player.motionZ);
 	}
 	
 	public static void whenInWater(SimpleStatRecord record, EntityPlayer player)
