@@ -92,7 +92,7 @@ public class FoodModule implements StatProvider<FoodRecord> {
 				
 				int value= foodTable.get(randomKey);
 				
-				if(value > 0 && value != id)
+				if(value > 0 && randomKey != id)
 				{
 					foodTable.put(randomKey, value-1);
 				
