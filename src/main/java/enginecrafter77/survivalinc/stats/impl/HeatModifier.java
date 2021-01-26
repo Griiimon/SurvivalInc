@@ -23,13 +23,16 @@ import enginecrafter77.survivalinc.stats.effect.PotionStatEffect;
 import enginecrafter77.survivalinc.strugglecraft.TraitModule;
 import enginecrafter77.survivalinc.strugglecraft.TraitModule.TRAITS;
 import enginecrafter77.survivalinc.strugglecraft.WoolArmor;
+import enginecrafter77.survivalinc.strugglecraft.WinterArmor;
 import enginecrafter77.survivalinc.util.Util;
 import net.minecraft.block.Block;
+import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.MobEffects;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
@@ -99,6 +102,7 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		}
 		
 		customArmorTypes.put("WOOL", WoolArmor.woolMaterial);
+		customArmorTypes.put("WINTER", WinterArmor.winterMaterial);
 		
 		// Armor heat isolation
 		for(String entry : ModConfig.HEAT.armorMaterialConductivity)
@@ -178,7 +182,9 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 
 		if(Util.thisClientOnly(player))
 		{
-			Thermometer.value= Math.max(0f, Math.min(2f*(float)ModConfig.HEAT.tempCoefficient, target+0.2f*(float)ModConfig.HEAT.tempCoefficient))/(2f*(float)ModConfig.HEAT.tempCoefficient);
+//			Thermometer.value= Math.max(0f, Math.min(2f*(float)ModConfig.HEAT.tempCoefficient, target+0.2f*(float)ModConfig.HEAT.tempCoefficient))/(2f*(float)ModConfig.HEAT.tempCoefficient);
+
+			Thermometer.value= Math.max(0f, Math.min(1f, (target/(float)ModConfig.HEAT.tempCoefficient+0.5f) / 2.5f));
 		
 			if(HeatDebugCommand.enabled && player.world.getTotalWorldTime() % 40 == 0)
 			{
@@ -247,6 +253,12 @@ public class HeatModifier implements StatProvider<SimpleStatRecord> {
 		if(heat.getValue() > 80f)
 		{
 			SanityTendencyModifier.instance.addToTendency(-(heat.getValue() - 80f)*0.001f, "Hot", player);
+			if(player.world.isRemote)
+			if(Util.chance((heat.getValue() - 80 + 10)))
+				player.world.spawnParticle(EnumParticleTypes.SMOKE_NORMAL, player.posX + (Util.randf() * 0.5 - 0.25), player.posY + (Util.randf() * 1 + 0.75), player.posZ + (Util.randf() * 0.5 - 0.25), player.motionX, 0.02, player.motionZ);
+			if(Util.chance(Math.min(2f, (heat.getValue() - 80f) * 0.1f)))
+				player.world.playSound(player.posX, player.posY, player.posZ, SoundEvents.ENTITY_PLAYER_BREATH, SoundCategory.AMBIENT, 1f, 1, false);
+
 		}
 		
 		if(heat.getValue() > 45f && heat.getValue()<55f)
