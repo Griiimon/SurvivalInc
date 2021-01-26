@@ -1,6 +1,7 @@
 package enginecrafter77.survivalinc.strugglecraft;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.UUID;
 
 import enginecrafter77.survivalinc.ModItems;
@@ -12,6 +13,7 @@ import enginecrafter77.survivalinc.stats.impl.SanityTendencyModifier;
 import enginecrafter77.survivalinc.util.Util;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockCrops;
+import net.minecraft.block.BlockSapling;
 import net.minecraft.block.BlockTallGrass;
 import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.IBlockState;
@@ -23,11 +25,13 @@ import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityAgeable;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityTracker;
 import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.item.EntityBoat;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.passive.EntityWaterMob;
 import net.minecraft.entity.player.EntityPlayer;
@@ -35,6 +39,8 @@ import net.minecraft.entity.projectile.EntityFishHook;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemFishFood;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
 import net.minecraft.item.crafting.FurnaceRecipes;
@@ -43,12 +49,16 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.entity.living.BabyEntitySpawnEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.BlockEvent.CropGrowEvent;
 import net.minecraftforge.event.world.BlockEvent.HarvestDropsEvent;
 import net.minecraftforge.fml.common.eventhandler.Event.Result;
@@ -66,8 +76,10 @@ public class Tweaks {
 	public static final PropertyEnum<BlockTallGrass.EnumType> GRASS_TYPE = PropertyEnum.<BlockTallGrass.EnumType>create(
 			"type", BlockTallGrass.EnumType.class);
 
-	ArrayList<CropKiller> listCropsToKill= new ArrayList<CropKiller>();
-	
+	ArrayList<CropKiller> listCropsToKill = new ArrayList<CropKiller>();
+
+	HashMap<ChunkCoords, FishChunk> fishPopulation = new HashMap<ChunkCoords, FishChunk>();
+
 	public static Tweaks instance = new Tweaks();
 
 	public void init() {
@@ -94,6 +106,59 @@ public class Tweaks {
 				animal.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).applyModifier(attr);
 				animal.heal(100f);
 				animal.setHealth(animal.getMaxHealth());
+			}
+		}
+
+		if (!event.getWorld().isRemote && ent instanceof EntityItem) {
+			EntityItem ei = (EntityItem) ent;
+
+			if (ei.getItem().getItem() == Item.getItemFromBlock(Blocks.SAPLING))
+				if (Util.chance(event.getWorld(), 95)) {
+//					System.out.println("DEBUG: removed sapling");
+					event.setCanceled(true);
+				}
+		}
+
+		if (ModConfig.TWEAKS.enhancedFishing && !event.getWorld().isRemote && ent instanceof EntityFishHook) {
+			// these arent the target coords, but angler coords
+			// TODO approximate target coords by adding motion times x
+
+			ChunkCoords coords = new ChunkCoords(ent.chunkCoordX, ent.chunkCoordZ);
+
+			if (instance.fishPopulation.containsKey(coords)) {
+
+				FishChunk chunk= instance.fishPopulation.get(coords);
+				
+				chunk.update(event.getWorld(), coords, instance.fishPopulation);
+				
+				if(chunk.population <= 0) {
+					EntityFishHook hook = (EntityFishHook) ent;
+
+					hook.handleHookRetraction();
+				}
+			}
+		}
+
+		if (ModConfig.TWEAKS.enhancedFishing && !event.getWorld().isRemote && ent instanceof EntityItem) {
+			EntityItem ei = (EntityItem) ent;
+
+			if (ei.getItem().getItem() instanceof ItemFishFood) {
+
+				// TODO expose isCooked (private) and add !isCooked
+				if (ent.motionY > 0) {
+
+//					event.getWorld().getMinecraftServer().getPlayerList().sendMessage(new TextComponentString("caught fish"));
+
+					ChunkCoords coords = new ChunkCoords(ent.chunkCoordX, ent.chunkCoordZ);
+
+					if (instance.fishPopulation.containsKey(coords)) {
+						instance.fishPopulation.get(coords).substract(event.getWorld(), coords, instance.fishPopulation);
+					} else
+					{
+						System.out.println("DEBUG: Create new FishChunk at "+coords);
+						instance.fishPopulation.put(coords, new FishChunk(event.getWorld()));
+					}
+				}
 			}
 		}
 
@@ -151,17 +216,11 @@ public class Tweaks {
 			if (event.player.isRiding() && event.player.getRidingEntity() instanceof EntityBoat) {
 				if (event.player.motionX != 0 || event.player.motionZ != 0)
 					event.player.addExhaustion((float) ModConfig.TWEAKS.rowingExhaustion);
-			}
-			else
-			if(Util.isSwimming(event.player))
+			} else if (Util.isSwimming(event.player))
 				event.player.addExhaustion((float) ModConfig.TWEAKS.swimExhaustion);
-
-			
 
 		}
 
-		
-		
 		if (event.side != Side.CLIENT)
 			return;
 
@@ -186,20 +245,19 @@ public class Tweaks {
 	@SubscribeEvent
 	public static void onWorldTick(TickEvent.WorldTickEvent event) {
 
-		if(event.side == Side.CLIENT)
+		if (event.side == Side.CLIENT)
 			return;
-		
-		ArrayList<CropKiller> listRemove= new ArrayList<CropKiller>();
-		
-		for(CropKiller ck : instance.listCropsToKill)
-		{
-			if(ck.Tick(event.world))
+
+		ArrayList<CropKiller> listRemove = new ArrayList<CropKiller>();
+
+		for (CropKiller ck : instance.listCropsToKill) {
+			if (ck.Tick(event.world))
 				listRemove.add(ck);
 		}
-		
-		while(listRemove.size() > 0)
+
+		while (listRemove.size() > 0)
 			listRemove.remove(0);
-		
+
 	}
 
 	@SubscribeEvent
@@ -216,16 +274,14 @@ public class Tweaks {
 
 //		SeasonData data = SeasonData.load(event.getWorld());
 //		if (data.season == Season.WINTER)
-		if(event.getWorld().getBiome(event.getPos()).getDefaultTemperature() < 0.2f)
-		{
+		if (event.getWorld().getBiome(event.getPos()).getDefaultTemperature() < 0.2f) {
 			event.setResult(Result.DENY);
-			
-			Block crop= event.getWorld().getBlockState(event.getPos()).getBlock();
-			
-			if(crop instanceof BlockCrops)
+
+			Block crop = event.getWorld().getBlockState(event.getPos()).getBlock();
+
+			if (crop instanceof BlockCrops)
 				instance.listCropsToKill.add(new CropKiller(event.getPos()));
-		}
-		else {
+		} else {
 
 			float chance = 10f;
 
@@ -264,7 +320,35 @@ public class Tweaks {
 				event.getDrops().add(new ItemStack(Items.WHEAT_SEEDS));
 
 		}
+
+		if (state.getBlock() instanceof BlockCrops) {
+			BlockCrops crops = (BlockCrops) state.getBlock();
+			if (!crops.isMaxAge(state))
+				event.getDrops().clear();
+		}
+
 	}
+
+	@SubscribeEvent
+	public static void onPlayerInteract(PlayerInteractEvent.RightClickBlock e) {
+
+//		Block block= e.getWorld().getBlockState(e.getPos()).getBlock();
+
+//		e.getEntityPlayer().sendMessage(new TextComponentString("Tried to place "+block.getLocalizedName()));
+
+//		if(block instanceof BlockSapling && Util.chance(e.getWorld(), 95))
+//			e.setCanceled(true);
+
+	}
+
+	/*
+	 * SAPLING, use player interact event public static void
+	 * onBlockPlaced(BlockEvent.PlaceEvent event) {
+	 * 
+	 * 
+	 * 
+	 * }
+	 */
 
 	public static void postInit() {
 		// reduce Tool durability
@@ -286,27 +370,22 @@ public class Tweaks {
 
 	}
 
-	
-	static class CropKiller
-	{
-		int delay= 20;
+	static class CropKiller {
+		int delay = 20;
 		BlockPos pos;
-		
-		public CropKiller(BlockPos p)
-		{
-			pos= p;
+
+		public CropKiller(BlockPos p) {
+			pos = p;
 		}
-		
-		public boolean Tick(World world)
-		{
+
+		public boolean Tick(World world) {
 			delay--;
-			if(delay <= 0)
-			{
+			if (delay <= 0) {
 				world.setBlockState(pos, Blocks.AIR.getDefaultState());
 				return true;
 			}
 			return false;
 		}
 	}
-	
+
 }
