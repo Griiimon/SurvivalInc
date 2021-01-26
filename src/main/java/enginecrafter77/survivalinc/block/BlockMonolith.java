@@ -78,8 +78,7 @@ public class BlockMonolith extends Block implements ITileEntityProvider {
 	 * new ModelResourceLocation(getRegistryName(), "inventory")); }
 	 */
 	@Override
-	public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase entity,
-			ItemStack stack) {
+	public void onBlockPlacedBy(World world, BlockPos pos, IBlockState state, EntityLivingBase entity, ItemStack stack) {
 		if (world.isRemote)
 			return;
 
@@ -229,8 +228,7 @@ public class BlockMonolith extends Block implements ITileEntityProvider {
 			int reach= finalList.size() + extraValue;
 			
 			MyWorldSavedData.get(world).addWorshipPlace(center, reach);
-			world.getMinecraftServer().getPlayerList().sendMessage(
-					new TextComponentString("New place of worship at " + center + " (reach " + reach + ")"));
+			world.getMinecraftServer().getPlayerList().sendMessage(new TextComponentString("Stonecircle built (reach " + reach + ")"));
 		}
 
 	}
