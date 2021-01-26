@@ -9,10 +9,12 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent.PlayerLoggedOutEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
 import net.minecraftforge.fml.common.gameevent.TickEvent.WorldTickEvent;
 
 public class AutoShutdown {
@@ -62,7 +64,7 @@ public class AutoShutdown {
 	@SubscribeEvent
 	public static void onTick(WorldTickEvent event)
 	{
-		if(instance.shutdownCountdown > 0)
+		if(instance.shutdownCountdown > 0 && event.phase == Phase.START)
 		{
 			instance.shutdownCountdown--;
 			if(instance.shutdownCountdown == 0)
@@ -72,6 +74,17 @@ public class AutoShutdown {
 				FMLCommonHandler.instance().getMinecraftServerInstance().initiateShutdown();
 			}
 		}
+	}
+
+	@SubscribeEvent
+	public static void onLoad(WorldEvent.Load event)
+	{
+		int ticks= ModConfig.AUTO_SHUTDOWN.ticks * 5;
+		
+		System.out.println("Auto Shutdown will close server if noone connects within "+(ticks/20)+" seconds");
+		
+		instance.shutdownCountdown= ticks;
+		
 	}
 	
 }
