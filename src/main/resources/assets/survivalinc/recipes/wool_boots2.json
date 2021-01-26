@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "X X",
+    "X X"
+  ],
+  "key": {
+    "X": 
+	{
+      "ore": "blockWool",
+	  "type": "forge:ore_dict"
+    }
+  },
+  "result": {
+    "item": "survivalinc:wool_boots"
+  }
+}
